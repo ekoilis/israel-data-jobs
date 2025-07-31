@@ -134,6 +134,14 @@ abstract class JobCollector {
     const count = Math.floor(Math.random() * 5) + 3;
     return allTags.sort(() => 0.5 - Math.random()).slice(0, count);
   }
+
+  protected mapExperienceLevel(title: string, description: string = ''): 'Entry' | 'Mid' | 'Senior' | 'Executive' {
+    const text = `${title} ${description}`.toLowerCase();
+    if (text.includes('senior') || text.includes('lead') || text.includes('principal')) return 'Senior';
+    if (text.includes('junior') || text.includes('entry') || text.includes('intern')) return 'Entry';
+    if (text.includes('director') || text.includes('vp') || text.includes('head of') || text.includes('manager')) return 'Executive';
+    return 'Mid';
+  }
 }
 
 /**
@@ -173,7 +181,7 @@ class LinkedInCollector extends JobCollector {
   
   private async fetchJobsFromJSearch(): Promise<JobPosting[]> {
     // Call our Supabase edge function that handles JSearch API
-    const response = await fetch('/api/fetch-linkedin-jobs', {
+    const response = await fetch('/functions/v1/fetch-linkedin-jobs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -235,13 +243,6 @@ class LinkedInCollector extends JobCollector {
     return 'Full-time';
   }
   
-  private mapExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Executive' {
-    const text = `${title} ${description}`.toLowerCase();
-    if (text.includes('senior') || text.includes('lead') || text.includes('principal')) return 'Senior';
-    if (text.includes('junior') || text.includes('entry') || text.includes('intern')) return 'Entry';
-    if (text.includes('director') || text.includes('vp') || text.includes('head of')) return 'Executive';
-    return 'Mid';
-  }
   
   private extractTags(title: string, description: string): string[] {
     const text = `${title} ${description}`.toLowerCase();
@@ -306,13 +307,15 @@ class GoogleCollector extends JobCollector {
   
   private async fetchJobsFromGoogleAPI(): Promise<JobPosting[]> {
     try {
-      const apiUrl = 'https://careers.google.com/api/v3/search/?location=Israel';
-      
-      const response = await fetch(apiUrl, {
+      // Call our Supabase edge function for Google jobs
+      const response = await fetch('/functions/v1/fetch-google-jobs', {
+        method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keywords: ['data scientist', 'machine learning', 'AI', 'analytics']
+        })
       });
       
       if (!response.ok) {
@@ -387,13 +390,6 @@ class GoogleCollector extends JobCollector {
     return 'Full-time';
   }
   
-  private mapExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Executive' {
-    const text = `${title} ${description}`.toLowerCase();
-    if (text.includes('senior') || text.includes('staff') || text.includes('principal') || text.includes('lead')) return 'Senior';
-    if (text.includes('junior') || text.includes('entry') || text.includes('associate') || text.includes('intern')) return 'Entry';
-    if (text.includes('director') || text.includes('vp') || text.includes('head of') || text.includes('manager')) return 'Executive';
-    return 'Mid';
-  }
   
   private extractTags(title: string, description: string, qualifications?: string): string[] {
     const text = `${title} ${description} ${qualifications || ''}`.toLowerCase();
@@ -457,78 +453,45 @@ class MobileyeCollector extends JobCollector {
   }
   
   private async crawlMobileyeJobs(): Promise<JobPosting[]> {
-    const keywords = ['AI', 'Algorithm', 'Machine Learning', 'Deep Learning', 'Data Scientist'];
-    const baseUrl = 'https://careers.mobileye.com';
-    const jobListUrl = `${baseUrl}/jobs`;
-    
     try {
-      // Using fetch API instead of axios for browser compatibility
-      const response = await fetch(jobListUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const html = await response.text();
-      
-      // Parse HTML using DOMParser (browser-native alternative to cheerio)
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const jobElements = doc.querySelectorAll('a.MuiBox-root[href^="/jobs/"]');
-      const jobs: JobPosting[] = [];
-      
-      for (let i = 0; i < Math.min(jobElements.length, 10); i++) {
-        const elem = jobElements[i] as HTMLAnchorElement;
-        const titleElement = elem.querySelector('h6');
-        const title = titleElement?.textContent?.trim() || '';
-        const href = elem.getAttribute('href');
-        
-        if (!href || !title) continue;
-        
-        // Skip irrelevant jobs
-        if (!keywords.some(k => title.toLowerCase().includes(k.toLowerCase()))) continue;
-        
-        const url = baseUrl + href;
-        let description = 'AI/ML position at Mobileye focusing on autonomous driving technology.';
-        
-        try {
-          // Try to get job details
-          const jobResponse = await fetch(url);
-          if (jobResponse.ok) {
-            const jobHtml = await jobResponse.text();
-            const jobDoc = parser.parseFromString(jobHtml, 'text/html');
-            const descElement = jobDoc.querySelector('.career-job-description');
-            if (descElement?.textContent) {
-              description = descElement.textContent.trim().slice(0, 300) + '...';
-            }
-          }
-        } catch (err) {
-          console.warn(`Failed to fetch details for job ${url}:`, err);
-        }
-        
-        const job: JobPosting = {
-          id: `mobileye-real-${Date.now()}-${i}`,
-          title,
-          company: 'Mobileye',
-          location: 'Jerusalem, Israel',
-          description,
-          url,
-          source: 'Mobileye' as const,
-          postDate: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          collectionDate: new Date().toISOString().split('T')[0],
-          jobType: 'Full-time' as const,
-          experienceLevel: /senior|lead/i.test(title) ? 'Senior' as const : 'Mid' as const,
-          tags: this.getTagsFromTitle(title),
-        };
-        
-        jobs.push(job);
+      // Call our Supabase edge function for Mobileye jobs
+      const response = await fetch('/functions/v1/fetch-mobileye-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+      });
+
+      if (!response.ok) {
+        throw new Error(`Mobileye API request failed: ${response.status}`);
       }
-      
-      console.log(`Successfully crawled ${jobs.length} Mobileye jobs`);
-      return jobs;
+
+      const data = await response.json();
+      return this.transformMobileyeData(data.jobs || []);
       
     } catch (error) {
-      console.error('Error crawling Mobileye careers:', error);
+      console.error('Error fetching from Mobileye API:', error);
       throw error;
     }
+  }
+
+  private transformMobileyeData(jobs: any[]): JobPosting[] {
+    return jobs.map((job: any, index: number) => ({
+      id: job.id || `mobileye-${Date.now()}-${index}`,
+      title: job.title || 'AI Engineer',
+      company: job.company || 'Mobileye',
+      location: job.location || 'Jerusalem, Israel',
+      description: job.description || 'AI/ML position at Mobileye focusing on autonomous driving technology.',
+      url: job.url || '#',
+      source: 'Mobileye' as const,
+      postDate: job.date_posted ? new Date(job.date_posted).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      collectionDate: new Date().toISOString().split('T')[0],
+      salaryRange: undefined,
+      jobType: job.employment_type || 'Full-time' as const,
+      experienceLevel: this.mapExperienceLevel(job.title, job.description),
+      tags: job.tags || this.getTagsFromTitle(job.title || 'AI Engineer')
+    }));
   }
   
   private getTagsFromTitle(title: string): string[] {
@@ -589,67 +552,47 @@ class JobsCoIlCollector extends JobCollector {
   }
   
   private async crawlJobsCoIl(): Promise<JobPosting[]> {
-    const keywords = ['data scientist', 'machine learning', 'AI', 'data analyst', 'ML engineer'];
-    const baseUrl = 'https://www.jobs.co.il';
-    
     try {
-      // Search for data science jobs in Tel Aviv/Israel
-      const searchUrl = `${baseUrl}/searchjobs/?CategoriId=83&RegionId=38&Position=data+scientist`;
-      
-      const response = await fetch(searchUrl, {
+      // Call our Supabase edge function for Jobs.co.il
+      const response = await fetch('/functions/v1/fetch-jobscoil-jobs', {
+        method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: 'data scientist machine learning'
+        })
       });
-      
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const jobElements = doc.querySelectorAll('.job-item, .JobItem, [data-job-id]');
-      const jobs: JobPosting[] = [];
-      
-      for (let i = 0; i < Math.min(jobElements.length, 8); i++) {
-        const elem = jobElements[i] as HTMLElement;
-        
-        const titleElement = elem.querySelector('.job-title, .JobTitle, h3, h2, a[href*="job"]');
-        const title = titleElement?.textContent?.trim() || '';
-        
-        const companyElement = elem.querySelector('.company-name, .CompanyName, .employer');
-        const company = companyElement?.textContent?.trim() || 'Israeli Tech Company';
-        
-        const linkElement = elem.querySelector('a[href*="job"]') as HTMLAnchorElement;
-        const href = linkElement?.getAttribute('href') || '';
-        
-        if (!title || !title.toLowerCase().includes('data')) continue;
-        
-        const job: JobPosting = {
-          id: `jobs-co-il-${Date.now()}-${i}`,
-          title,
-          company,
-          location: 'Tel Aviv, Israel',
-          description: `${title} position at ${company}. Exciting opportunity in data science and analytics.`,
-          url: href.startsWith('http') ? href : baseUrl + href,
-          source: 'Other' as const,
-          postDate: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          collectionDate: new Date().toISOString().split('T')[0],
-          jobType: 'Full-time' as const,
-          experienceLevel: this.determineExperienceLevel(title),
-          tags: this.extractTagsFromText(title),
-        };
-        
-        jobs.push(job);
+
+      if (!response.ok) {
+        throw new Error(`Jobs.co.il request failed: ${response.status}`);
       }
-      
-      console.log(`Successfully crawled ${jobs.length} jobs from Jobs.co.il`);
-      return jobs;
+
+      const data = await response.json();
+      return this.transformJobsCoIlData(data.jobs || []);
       
     } catch (error) {
       console.error('Error crawling Jobs.co.il:', error);
       throw error;
     }
+  }
+
+  private transformJobsCoIlData(jobs: any[]): JobPosting[] {
+    return jobs.map((job: any, index: number) => ({
+      id: job.id || `jobscoil-${Date.now()}-${index}`,
+      title: job.title || 'Data Science Position',
+      company: job.company || 'Tech Company',
+      location: job.location || 'Israel',
+      description: job.description || 'Data science and analytics position.',
+      url: job.url || '#',
+      source: 'Other' as const,
+      postDate: job.date_posted ? new Date(job.date_posted).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      collectionDate: new Date().toISOString().split('T')[0],
+      salaryRange: undefined,
+      jobType: 'Full-time' as const,
+      experienceLevel: this.determineExperienceLevel(job.title),
+      tags: job.tags || this.extractTagsFromText(job.title)
+    }));
   }
   
   private determineExperienceLevel(title: string): 'Entry' | 'Mid' | 'Senior' | 'Executive' {
@@ -718,64 +661,46 @@ class AllJobsCollector extends JobCollector {
   
   private async crawlAllJobs(): Promise<JobPosting[]> {
     try {
-      // AllJobs.co.il search for data science positions
-      const searchUrl = 'https://www.alljobs.co.il/SearchResultsGuest.aspx?position=data+scientist&type=0';
-      
-      const response = await fetch(searchUrl, {
+      // Call our Supabase edge function for AllJobs
+      const response = await fetch('/functions/v1/fetch-alljobs-jobs', {
+        method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: 'data scientist machine learning'
+        })
       });
-      
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const jobElements = doc.querySelectorAll('.JobItem, .job-item, [id*="job"], .result-item');
-      const jobs: JobPosting[] = [];
-      
-      for (let i = 0; i < Math.min(jobElements.length, 6); i++) {
-        const elem = jobElements[i] as HTMLElement;
-        
-        const titleElement = elem.querySelector('.jobtitle, .job-title, h3, h2, a[href*="job"]');
-        const title = titleElement?.textContent?.trim() || `Data Science Position ${i + 1}`;
-        
-        const companyElement = elem.querySelector('.company, .employer, .companyName');
-        const company = companyElement?.textContent?.trim() || 'Israeli Tech Company';
-        
-        const locationElement = elem.querySelector('.location, .city');
-        const location = locationElement?.textContent?.trim() || 'Israel';
-        
-        const linkElement = elem.querySelector('a[href*="job"]') as HTMLAnchorElement;
-        const href = linkElement?.getAttribute('href') || '';
-        
-        const job: JobPosting = {
-          id: `alljobs-${Date.now()}-${i}`,
-          title,
-          company,
-          location: location.includes('Israel') ? location : `${location}, Israel`,
-          description: `Data science opportunity at ${company}. Join our team to work on challenging analytical problems.`,
-          url: href.startsWith('http') ? href : `https://www.alljobs.co.il${href}`,
-          source: 'Other' as const,
-          postDate: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          collectionDate: new Date().toISOString().split('T')[0],
-          jobType: 'Full-time' as const,
-          experienceLevel: this.determineExperienceLevel(title),
-          tags: this.extractTagsFromText(title),
-        };
-        
-        jobs.push(job);
+
+      if (!response.ok) {
+        throw new Error(`AllJobs.co.il request failed: ${response.status}`);
       }
-      
-      console.log(`Successfully crawled ${jobs.length} jobs from AllJobs`);
-      return jobs;
+
+      const data = await response.json();
+      return this.transformAllJobsData(data.jobs || []);
       
     } catch (error) {
-      console.error('Error crawling AllJobs:', error);
+      console.error('Error crawling AllJobs.co.il:', error);
       throw error;
     }
+  }
+
+  private transformAllJobsData(jobs: any[]): JobPosting[] {
+    return jobs.map((job: any, index: number) => ({
+      id: job.id || `alljobs-${Date.now()}-${index}`,
+      title: job.title || 'Data Science Position',
+      company: job.company || 'Innovation Company',
+      location: job.location || 'Israel',
+      description: job.description || 'Data science and innovation position.',
+      url: job.url || '#',
+      source: 'Other' as const,
+      postDate: job.date_posted ? new Date(job.date_posted).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      collectionDate: new Date().toISOString().split('T')[0],
+      salaryRange: undefined,
+      jobType: 'Full-time' as const,
+      experienceLevel: this.determineExperienceLevel(job.title),
+      tags: job.tags || this.extractTagsFromText(job.title)
+    }));
   }
   
   private determineExperienceLevel(title: string): 'Entry' | 'Mid' | 'Senior' | 'Executive' {
