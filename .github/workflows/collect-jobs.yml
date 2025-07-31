@@ -2,8 +2,8 @@ name: Collect Jobs Data
 
 on:
   schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
+    # Run on the 1st day of every month (every ~30 days)
+    - cron: '0 0 1 * *'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
