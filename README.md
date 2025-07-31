@@ -110,6 +110,34 @@ JobDashboard
 4. **Open the application**
    Navigate to `http://localhost:8080`
 
+### API Configuration
+
+#### JSearch API Setup (Required for LinkedIn Job Data)
+
+To enable real LinkedIn job data collection, you need to configure the JSearch API:
+
+**Step 1: Get JSearch API Key**
+1. Visit [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
+2. Subscribe (free tier available)
+3. Copy your API key
+
+**Step 2: Add API Key to Supabase Secrets**
+1. Go to your Supabase dashboard
+2. Navigate to **Project Settings** → **Edge Functions** → **Secrets**
+3. Add a new secret:
+   - **Name**: `JSEARCH_API_KEY`
+   - **Value**: Your RapidAPI key for JSearch
+
+🚀 **Features included with JSearch integration:**
+- Real job data from LinkedIn (via JSearch)
+- Salary extraction when available
+- Smart experience level mapping
+- Technology tag extraction
+- Location filtering for Israel
+- Error handling with fallback
+
+The collector will now fetch real LinkedIn jobs for Israeli data science positions!
+
 ### First Time Setup
 
 1. **Start the collection system**
