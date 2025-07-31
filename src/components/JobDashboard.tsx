@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Play, Pause, Download, RefreshCw, Calendar, Building, MapPin, ExternalLink } from 'lucide-react';
+import { Play, Pause, Download, RefreshCw, Calendar, Building, MapPin, ExternalLink, Database } from 'lucide-react';
 
 export const JobDashboard = () => {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
@@ -312,6 +313,83 @@ export const JobDashboard = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Collector Statistics Table */}
+        {stats && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Job Collection Statistics by Source
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Collector Source</TableHead>
+                    <TableHead>Jobs Found</TableHead>
+                    <TableHead>Percentage</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(stats.sourceDistribution)
+                    .sort(([,a], [,b]) => b - a) // Sort by job count descending
+                    .map(([source, count]) => {
+                      const percentage = stats.totalJobs > 0 ? ((count / stats.totalJobs) * 100).toFixed(1) : '0';
+                      const getSourceDisplayName = (src: string) => {
+                        switch(src) {
+                          case 'LinkedIn': return 'LinkedIn (JSearch API)';
+                          case 'Google': return 'Google Careers';
+                          case 'Mobileye': return 'Mobileye Careers';
+                          case 'Other': return 'Israeli Job Boards';
+                          default: return src;
+                        }
+                      };
+                      
+                      return (
+                        <TableRow key={source}>
+                          <TableCell className="font-medium">
+                            {getSourceDisplayName(source)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold text-primary">{count}</span>
+                              <span className="text-sm text-muted-foreground">jobs</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary transition-all duration-300"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-medium">{percentage}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={count > 0 ? "default" : "secondary"}>
+                              {count > 0 ? "Active" : "No Data"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  {Object.keys(stats.sourceDistribution).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No data collected yet. Start collection to see statistics.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
 
         {/* Filters */}
