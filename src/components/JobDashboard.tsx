@@ -89,9 +89,6 @@ export const JobDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Initialize clean storage (removes all fake jobs)
-      CSVStorageService.initializeCleanStorage();
-      
       const jobData = await collectionService.getAllJobs();
       setJobs(jobData);
       calculateStats(jobData);
