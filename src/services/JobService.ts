@@ -8,10 +8,8 @@ export class JobService {
   private jobs: JobPosting[] = [];
   private lastFetchTime: Date | null = null;
   
-  // Configure your server IP and port here
-  private readonly SERVER_IP = 'localhost';
-  private readonly SERVER_PORT = '3001';
-  private readonly CSV_URL = `http://${this.SERVER_IP}:${this.SERVER_PORT}/jobs.csv`;
+  // Use local CSV file from public folder
+  private readonly CSV_URL = '/cvs.txt';
 
   static getInstance(): JobService {
     if (!JobService.instance) {
