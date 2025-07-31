@@ -24,12 +24,10 @@ export class JobCollectionService {
    */
   private initializeCollectors(): void {
     this.collectors = [
-      new LinkedInCollector(),
-      new GoogleCollector(),
-      new MetaCollector(),
-      new MobileyeCollector(),
-      new JobsCoIlCollector(),
-      new AllJobsCollector()
+      new LinkedInCollector(),      // Real data via JSearch API
+      new MobileyeCollector(),      // Real data from careers.mobileye.com
+      new JobsCoIlCollector(),      // Real data from jobs.co.il
+      new AllJobsCollector()        // Real data from alljobs.co.il
     ];
   }
 
@@ -270,57 +268,6 @@ class LinkedInCollector extends JobCollector {
   }
 }
 
-/**
- * Google careers collector adapter
- */
-class GoogleCollector extends JobCollector {
-  source = 'Google';
-  
-  async collect(): Promise<CollectionResult> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const jobs = this.generateMockJobs(Math.floor(Math.random() * 8) + 2);
-    await CSVStorageService.appendJobs(jobs);
-    
-    return {
-      success: true,
-      jobsCollected: jobs.length,
-      errors: [],
-      source: this.source,
-      timestamp: new Date().toISOString()
-    };
-  }
-  
-  protected getCompanyName(): string {
-    return 'Google';
-  }
-}
-
-/**
- * Meta careers collector adapter
- */
-class MetaCollector extends JobCollector {
-  source = 'Meta';
-  
-  async collect(): Promise<CollectionResult> {
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    
-    const jobs = this.generateMockJobs(Math.floor(Math.random() * 6) + 1);
-    await CSVStorageService.appendJobs(jobs);
-    
-    return {
-      success: true,
-      jobsCollected: jobs.length,
-      errors: [],
-      source: this.source,
-      timestamp: new Date().toISOString()
-    };
-  }
-  
-  protected getCompanyName(): string {
-    return 'Meta';
-  }
-}
 
 /**
  * Mobileye careers collector adapter
