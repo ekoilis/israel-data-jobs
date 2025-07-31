@@ -57,3 +57,25 @@ When using crawler mode, files are saved to `server/output/`:
 - `jobs-[timestamp].csv` - Timestamped job data
 - `latest.csv` - Most recent job data
 - `stats-[timestamp].json` - Collection statistics
+
+## GitHub Actions Integration
+
+The crawler automatically detects when running in GitHub Actions and adapts its behavior:
+
+### Local Development
+```bash
+npm run crawl
+```
+- Clones/pulls the target repository
+- Commits and pushes changes directly
+
+### GitHub Actions
+- Uses the workflow repository context
+- Copies files to public/ directory
+- Lets GitHub Actions workflow handle commit/push
+
+### Workflow Setup
+A GitHub Actions workflow (`.github/workflows/collect-jobs.yml`) is included that:
+- Runs every 6 hours automatically
+- Can be triggered manually
+- Commits and pushes updated jobs.csv to the repository

@@ -15,6 +15,8 @@ class JobCrawler {
     this.outputDir = path.join(__dirname, 'output');
     this.githubRepo = 'https://github.com/ekoilis/israel-data-jobs.git';
     this.repoDir = path.join(__dirname, 'israel-data-jobs');
+    this.isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+    this.githubWorkspace = process.env.GITHUB_WORKSPACE;
   }
 
   async run() {
@@ -75,7 +77,11 @@ class JobCrawler {
       });
       
       // Push to GitHub repository
-      await this.pushToGitHub(latestPath);
+      if (this.isGitHubActions) {
+        await this.handleGitHubActions(latestPath);
+      } else {
+        await this.pushToGitHub(latestPath);
+      }
       
     } catch (error) {
       console.error('❌ Error during job collection:', error.message);
@@ -83,9 +89,38 @@ class JobCrawler {
     }
   }
 
+  async handleGitHubActions(csvFilePath) {
+    console.log('');
+    console.log('🔧 Running in GitHub Actions environment');
+    
+    try {
+      // In GitHub Actions, we're already in the repo directory
+      const publicDir = this.githubWorkspace ? 
+        path.join(this.githubWorkspace, 'public') : 
+        path.join(process.cwd(), 'public');
+      
+      // Ensure public directory exists
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+        console.log('   Created public/ directory');
+      }
+
+      // Copy the CSV file to the public directory
+      const targetPath = path.join(publicDir, 'jobs.csv');
+      fs.copyFileSync(csvFilePath, targetPath);
+      console.log('   ✅ Copied jobs.csv to public/ directory');
+      
+      console.log('   📝 File ready for GitHub Actions workflow to commit and push');
+      
+    } catch (error) {
+      console.error('❌ Error handling GitHub Actions:', error.message);
+      throw error;
+    }
+  }
+
   async pushToGitHub(csvFilePath) {
     console.log('');
-    console.log('📤 Pushing to GitHub repository...');
+    console.log('📤 Pushing to GitHub repository (local mode)...');
     
     try {
       // Clone or pull the repository
