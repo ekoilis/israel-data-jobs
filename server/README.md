@@ -37,14 +37,23 @@ The server will run on `http://localhost:3001` and start collecting jobs immedia
 - `GET /scheduler/status` - Get scheduler status
 - `GET /health` - Health check endpoint
 
-## Configuration
+## Usage
 
-Edit the `SERVER_IP` and `SERVER_PORT` variables in `src/services/JobService.ts` to match your server configuration.
+### Server Mode (Continuous)
+```bash
+npm start
+```
+Runs the server with automatic job collection every 6 hours.
 
-## Job Collection
+### Crawler Mode (One-time)
+```bash
+npm run crawl
+```
+Runs job collection once and saves results to `output/` directory.
 
-The server automatically:
-1. Starts job collection when the server starts
-2. Runs collection every 6 hours via cron scheduler
-3. Collects from all configured sources in parallel
-4. Provides real-time job data to the frontend
+## Output Files
+
+When using crawler mode, files are saved to `server/output/`:
+- `jobs-[timestamp].csv` - Timestamped job data
+- `latest.csv` - Most recent job data
+- `stats-[timestamp].json` - Collection statistics

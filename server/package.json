@@ -5,7 +5,8 @@
   "main": "jobs-server.js",
   "scripts": {
     "start": "node jobs-server.js",
-    "dev": "nodemon jobs-server.js"
+    "dev": "nodemon jobs-server.js",
+    "crawl": "node crawler.js"
   },
   "dependencies": {
     "express": "^4.18.2",
