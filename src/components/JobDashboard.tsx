@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { JobPosting, JobStats } from '@/types/job';
-import { JobCollectionService } from '@/services/JobCollectionService';
+import { JobCollectionService, CSVStorageService } from '@/services/JobCollectionService';
 import { SchedulerService } from '@/services/SchedulerService';
-import { SampleDataService } from '@/services/SampleDataService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -89,8 +88,8 @@ export const JobDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Initialize with sample data if needed
-      await SampleDataService.initializeSampleData();
+      // Initialize clean storage (removes all fake jobs)
+      CSVStorageService.initializeCleanStorage();
       
       const jobData = await collectionService.getAllJobs();
       setJobs(jobData);
