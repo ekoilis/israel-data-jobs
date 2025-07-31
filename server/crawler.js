@@ -3,6 +3,7 @@
 const JobCollectionService = require('./services/JobCollectionService');
 const fs = require('fs');
 const path = require('path');
+const simpleGit = require('simple-git');
 
 /**
  * Standalone job crawler script
@@ -12,6 +13,8 @@ class JobCrawler {
   constructor() {
     this.jobCollectionService = new JobCollectionService();
     this.outputDir = path.join(__dirname, 'output');
+    this.githubRepo = 'https://github.com/ekoilis/israel-data-jobs.git';
+    this.repoDir = path.join(__dirname, 'israel-data-jobs');
   }
 
   async run() {
@@ -71,9 +74,63 @@ class JobCrawler {
         console.log(`   ${source}: ${count} jobs`);
       });
       
+      // Push to GitHub repository
+      await this.pushToGitHub(latestPath);
+      
     } catch (error) {
       console.error('❌ Error during job collection:', error.message);
       process.exit(1);
+    }
+  }
+
+  async pushToGitHub(csvFilePath) {
+    console.log('');
+    console.log('📤 Pushing to GitHub repository...');
+    
+    try {
+      // Clone or pull the repository
+      let git;
+      if (fs.existsSync(this.repoDir)) {
+        // Repository exists, pull latest changes
+        git = simpleGit(this.repoDir);
+        console.log('   Pulling latest changes...');
+        await git.pull('origin', 'main');
+      } else {
+        // Clone the repository
+        console.log('   Cloning repository...');
+        git = simpleGit();
+        await git.clone(this.githubRepo, this.repoDir);
+        git = simpleGit(this.repoDir);
+      }
+
+      // Ensure public directory exists
+      const publicDir = path.join(this.repoDir, 'public');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+
+      // Copy the CSV file to the public directory
+      const targetPath = path.join(publicDir, 'jobs.csv');
+      fs.copyFileSync(csvFilePath, targetPath);
+      console.log('   Copied jobs.csv to public/ directory');
+
+      // Add, commit, and push the changes
+      await git.add('public/jobs.csv');
+      
+      const timestamp = new Date().toISOString();
+      const commitMessage = `Update jobs data - ${timestamp}`;
+      
+      await git.commit(commitMessage);
+      console.log(`   Committed changes: ${commitMessage}`);
+      
+      await git.push('origin', 'main');
+      console.log('   Pushed to GitHub successfully!');
+      
+      console.log('✅ GitHub push completed');
+      
+    } catch (error) {
+      console.error('❌ Error pushing to GitHub:', error.message);
+      throw error;
     }
   }
 }
