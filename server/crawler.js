@@ -51,6 +51,14 @@ class JobCrawler {
       const latestPath = path.join(this.outputDir, 'latest.csv');
       fs.writeFileSync(latestPath, csvData, 'utf8');
       
+      // Save to public/cvs.txt for dashboard use
+      const publicDir = path.join(__dirname, '..', 'public');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      const publicCvsPath = path.join(publicDir, 'cvs.txt');
+      fs.writeFileSync(publicCvsPath, csvData, 'utf8');
+      
       // Generate statistics
       const stats = this.jobCollectionService.getStats();
       const statsFilename = `stats-${timestamp}.json`;
