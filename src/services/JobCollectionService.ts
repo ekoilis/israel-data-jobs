@@ -953,14 +953,6 @@ export class CSVStorageService {
   }
   
   /**
-   * Clear all job data from storage
-   */
-  static clearAllJobs(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
-    console.log('All job data cleared from storage');
-  }
-  
-  /**
    * Export CSV data for download
    */
   static async exportCSV(): Promise<string> {
@@ -972,7 +964,7 @@ export class CSVStorageService {
    * Initialize clean storage (removes all existing fake data)
    */
   static initializeCleanStorage(): void {
-    this.clearAllJobs();
+    localStorage.removeItem(this.STORAGE_KEY);
     console.log('Storage initialized with clean state - no fake jobs');
   }
 }
