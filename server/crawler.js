@@ -21,7 +21,7 @@ class JobCrawler {
 
   async run() {
     console.log('🚀 Starting job crawler...');
-    console.log('=' * 50);
+    console.log('='.repeat(50));
     
     try {
       // Ensure output directory exists
