@@ -54,6 +54,7 @@ class MobileyeCollector {
         $(selector).each((index, element) => {
           try {
             const $job = $(element);
+            console.log($job);
             
             const title = $job.find('.title, .job-title, .position-title, h2, h3, h4, a').first().text().trim() ||
                          $job.text().trim().split('\n')[0];
