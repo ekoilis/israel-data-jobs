@@ -5,7 +5,7 @@ An automated system for collecting and displaying Data Scientist job postings in
 ## 🎯 Features
 
 ### 📊 Automated Data Collection
-- **Multi-source collection**: JSearch API, SerpAPI, Google scraping, Mobileye, JobsCoil, AllJobs
+- **Multi-source collection**: JSearch API, SerpAPI, Google scraping, Gong, JobsCoil, AllJobs
 - **Scheduled automation**: Runs every 6 hours automatically
 - **Data persistence**: Stores all job data in CSV format
 - **Duplicate prevention**: Intelligent filtering to avoid duplicate entries
@@ -33,7 +33,7 @@ JobCollectionService
 ├── JSearchCollector       // RapidAPI JSearch (LinkedIn, Indeed, Glassdoor, etc.)
 ├── SerpAPICollector       // SerpAPI Google Jobs search integration
 ├── GoogleCollector        // Direct Google search scraping for careers.google.com
-├── MobileyeCollector      // Mobileye careers page scraping
+├── GongCollector          // Gong careers page scraping with Puppeteer
 ├── JobsCoilCollector      // Israeli JobsCoil platform scraping
 └── AllJobsCollector       // AllJobs platform scraping
 ```
@@ -203,14 +203,16 @@ The server includes multiple specialized collectors for comprehensive job data g
   - Location extraction from job titles/descriptions
   - Technology stack identification
 
-### 4. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
-- **Purpose**: Scrapes Mobileye careers page for job openings
-- **Status**: Active web scraping implementation
-- **Target URL**: `https://www.mobileye.com/careers`
+### 4. Gong Collector (`server/collectors/GongCollector.js`)
+- **Purpose**: Scrapes Gong careers page for job openings using Puppeteer
+- **Status**: Active web scraping implementation with browser automation
+- **Target URL**: `https://www.gong.io/careers/`
 - **Features**:
-  - Career page parsing
-  - Job detail extraction
+  - Puppeteer browser automation for dynamic content
+  - Career page parsing with JavaScript execution
+  - Job detail extraction from SPA applications
   - Location-based filtering
+  - Improved reliability for modern web applications
 
 ### 5. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
 - **Purpose**: Scrapes Israeli job board JobsCoil
@@ -382,7 +384,7 @@ await jobCollectionService.collectAllJobs()
 
 #### Filtering Jobs
 - **Search**: Enter keywords to search titles, companies, or skills
-- **Company Filter**: Select specific companies (Google, Mobileye, etc.)
+- **Company Filter**: Select specific companies (Google, Gong, etc.)
 - **Source Filter**: Filter by collection source (JSearch, Google, etc.)
 - **Experience Level**: Filter by required experience (Entry, Mid, Senior, Executive)
 
@@ -419,7 +421,7 @@ interface JobPosting {
   location: string;              // Job location (Israeli cities)
   description: string;           // Job description
   url: string;                   // Link to original posting
-  source: 'JSearch' | 'SerpAPI' | 'Google' | 'Mobileye' | 'JobsCoil' | 'AllJobs';
+  source: 'JSearch' | 'SerpAPI' | 'Google' | 'Gong' | 'JobsCoil' | 'AllJobs';
   postDate: string;              // ISO date string
   collectionDate: string;        // ISO date string
   salaryRange?: string;          // Optional salary information
