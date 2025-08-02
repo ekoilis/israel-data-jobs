@@ -8,8 +8,12 @@ export class JobService {
   private jobs: JobPosting[] = [];
   private lastFetchTime: Date | null = null;
   
-  // Use local CSV file from public folder
-  private readonly CSV_URL = '/cvs.txt';
+  // Configuration: set to true to use local static CSV, false to use remote server
+  private readonly USE_LOCAL_CSV = true;
+  
+  // URLs for different data sources
+  private readonly LOCAL_CSV_URL = '/cvs.txt';
+  private readonly REMOTE_SERVER_URL = 'http://localhost:3001/jobs.csv';
 
   static getInstance(): JobService {
     if (!JobService.instance) {
@@ -19,22 +23,31 @@ export class JobService {
   }
 
   /**
-   * Fetch jobs from CSV file
+   * Get the appropriate CSV URL based on configuration
+   */
+  private getCSVUrl(): string {
+    return this.USE_LOCAL_CSV ? this.LOCAL_CSV_URL : this.REMOTE_SERVER_URL;
+  }
+
+  /**
+   * Fetch jobs from CSV file (local static or remote server)
    */
   async fetchJobs(): Promise<JobPosting[]> {
     try {
-      console.log('Fetching jobs from CSV...');
+      const csvUrl = this.getCSVUrl();
+      const source = this.USE_LOCAL_CSV ? 'local static file' : 'remote server';
+      console.log(`Fetching jobs from ${source}: ${csvUrl}`);
       
-      const response = await fetch(this.CSV_URL);
+      const response = await fetch(csvUrl);
       if (!response.ok) {
-        throw new Error(`Failed to fetch CSV: ${response.status}`);
+        throw new Error(`Failed to fetch CSV from ${source}: ${response.status}`);
       }
       
       const csvText = await response.text();
       this.jobs = this.parseCSV(csvText);
       this.lastFetchTime = new Date();
       
-      console.log(`Fetched ${this.jobs.length} jobs from CSV`);
+      console.log(`Fetched ${this.jobs.length} jobs from ${source}`);
       return this.jobs;
     } catch (error) {
       console.error('Error fetching jobs from CSV:', error);
