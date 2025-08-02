@@ -110,6 +110,193 @@ JobDashboard
 4. **Open the application**
    Navigate to `http://localhost:8080`
 
+## 🖥️ Server-Side Setup (Optional for Enhanced Features)
+
+The application includes a powerful Node.js server for advanced job collection capabilities with multiple collectors and automated scheduling.
+
+### Server Architecture
+
+#### Job Collection Server (`server/`)
+The server provides:
+- **Automated job collection** from multiple sources
+- **Scheduled collection** every 6 hours
+- **REST API** for triggering collections and fetching data
+- **CSV/JSON export** functionality
+- **Real-time statistics** and monitoring
+
+### Server Installation & Setup
+
+1. **Navigate to server directory**
+   ```bash
+   cd server
+   ```
+
+2. **Install server dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Choose your running mode:**
+
+   **Option A: Continuous Server Mode (Recommended)**
+   ```bash
+   npm start
+   ```
+   - Runs server on `http://localhost:3001`
+   - Starts automatic collection immediately
+   - Continues collecting every 6 hours
+   - Provides API endpoints for frontend integration
+
+   **Option B: One-time Crawler Mode**
+   ```bash
+   npm run crawl
+   ```
+   - Runs collection once and exits
+   - Saves results to `server/output/` directory
+   - Good for testing or manual data gathering
+
+### Server API Endpoints
+
+Once the server is running, you can access:
+
+- `GET /jobs.csv` - Download job data in CSV format
+- `GET /jobs` - Get job data as JSON
+- `GET /stats` - View collection statistics
+- `POST /collect` - Manually trigger job collection
+- `GET /scheduler/status` - Check scheduler status
+- `GET /health` - Server health check
+
+### Job Collectors
+
+The server includes multiple specialized collectors:
+
+#### 1. LinkedIn Collector (`server/collectors/LinkedInCollector.js`)
+- **Purpose**: Collects data science jobs from LinkedIn
+- **Status**: Currently returns mock data (requires LinkedIn API access)
+- **Configuration**: No API key needed for mock data
+
+#### 2. Google Collector (`server/collectors/GoogleCollector.js`)
+- **Purpose**: Scrapes Google career opportunities
+- **Status**: Mock data implementation
+- **Configuration**: No API key required
+
+#### 3. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
+- **Purpose**: Collects jobs from Mobileye careers website
+- **Status**: Mock data implementation
+- **Target URL**: `https://www.mobileye.com/careers`
+
+#### 4. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
+- **Purpose**: Scrapes Israeli job board JobsCoil
+- **Status**: Mock data implementation
+- **Target URL**: `https://www.jobscoil.co.il`
+
+#### 5. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
+- **Purpose**: Collects from AllJobs platform
+- **Status**: Mock data implementation
+
+### API Key Configuration
+
+For production use with real data sources, you'll need to configure API keys:
+
+#### LinkedIn Jobs (via JSearch API)
+1. Get API key from [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
+2. Add to your environment or collector configuration
+3. Update `LinkedInCollector.js` to use real API calls
+
+#### Other Collectors
+Most collectors are designed to scrape public job boards and don't require API keys. However, for rate limiting and reliability, consider:
+- Adding user agents and delays between requests
+- Implementing proxy rotation for large-scale scraping
+- Respecting robots.txt and terms of service
+
+### Scheduler Service
+
+The server includes an automated scheduler (`server/services/SchedulerService.js`):
+
+**Features:**
+- **Automatic startup**: Begins collecting immediately when server starts
+- **6-hour intervals**: Collects jobs every 6 hours automatically
+- **Manual triggering**: API endpoint for immediate collection
+- **Status monitoring**: Track last collection time and next scheduled run
+- **Timezone aware**: Uses Israel timezone (`Asia/Jerusalem`)
+
+**Usage:**
+```javascript
+const SchedulerService = require('./services/SchedulerService');
+const scheduler = new SchedulerService(jobCollectionService);
+
+scheduler.start();              // Start automatic collection
+scheduler.stop();               // Stop the scheduler
+scheduler.triggerCollection();  // Manual collection trigger
+scheduler.getStatus();          // Get current status
+```
+
+### GitHub Actions Integration
+
+The project includes automated GitHub Actions for continuous job collection:
+
+**Workflow file**: `.github/workflows/collect-jobs.yml`
+
+**Features:**
+- **Monthly schedule**: Runs on the 1st of each month
+- **Manual trigger**: Can be run on-demand
+- **Automatic commits**: Updates and commits job data to repository
+- **Node.js 18**: Uses latest Node.js version for reliability
+
+**Setup:**
+1. The workflow automatically detects GitHub Actions environment
+2. Runs crawler in GitHub-optimized mode
+3. Commits updated CSV files to repository
+4. No additional configuration needed
+
+### Data Output
+
+**Server Mode Output:**
+- Real-time API access to job data
+- CSV downloads via `/jobs.csv` endpoint
+- JSON data via `/jobs` endpoint
+
+**Crawler Mode Output:**
+Files saved to `server/output/`:
+- `jobs-[timestamp].csv` - Timestamped job data
+- `latest.csv` - Most recent job data
+- `stats-[timestamp].json` - Collection statistics
+
+### Frontend Integration
+
+To connect the frontend to your local server:
+
+1. **Update JobService configuration** in frontend:
+   ```typescript
+   // In src/services/JobService.ts
+   private readonly USE_LOCAL_CSV = false; // Use server data
+   ```
+
+2. **Start both frontend and server**:
+   ```bash
+   # Terminal 1: Start server
+   cd server && npm start
+   
+   # Terminal 2: Start frontend
+   npm run dev
+   ```
+
+3. **Use the "Start Job Collection" button** in the dashboard to trigger server-side collection
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **Port conflicts**: Server runs on port 3001, ensure it's available
+2. **CORS errors**: Server includes CORS middleware for frontend access
+3. **Collection failures**: Check individual collector error logs
+4. **Memory issues**: For large datasets, consider implementing pagination
+
+**Debugging:**
+- Check server console for detailed collection logs
+- Use `/health` endpoint to verify server status
+- Monitor `/stats` endpoint for collection metrics
+
 ### API Configuration
 
 #### JSearch API Setup (Required for LinkedIn Job Data)
