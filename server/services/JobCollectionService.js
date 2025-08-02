@@ -1,7 +1,7 @@
 const JSearchCollector = require('../collectors/JSearchCollector');
 const SerpAPICollector = require('../collectors/SerpAPICollector');
 const GoogleCollector = require('../collectors/GoogleCollector');
-const MobileyeCollector = require('../collectors/MobileyeCollector');
+const GongCollector = require('../collectors/GongCollector');
 const JobsCoilCollector = require('../collectors/JobsCoilCollector');
 const AllJobsCollector = require('../collectors/AllJobsCollector');
 
@@ -11,7 +11,7 @@ class JobCollectionService {
       new JSearchCollector(),
       new SerpAPICollector(),
       new GoogleCollector(),
-      new MobileyeCollector(),
+      new GongCollector(),
       new JobsCoilCollector(),
       new AllJobsCollector()
     ];
