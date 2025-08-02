@@ -9,7 +9,7 @@ export class JobService {
   private lastFetchTime: Date | null = null;
   
   // Configuration: set to true to use local static CSV, false to use remote server
-  private readonly USE_LOCAL_CSV = true;
+  private readonly USE_LOCAL_CSV = false;
   
   // URLs for different data sources
   private readonly LOCAL_CSV_URL = '/cvs.txt';
