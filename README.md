@@ -560,44 +560,6 @@ interface JobStats {
 }
 ```
 
-## 🔄 System Architecture
-
-### Data Flow
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Job Sources   │───▶│  Collection      │───▶│   File Storage  │
-│                 │    │  Service         │    │                 │
-│ • JSearch API   │    │                  │    │ • CSV Export    │
-│ • SerpAPI       │    │ • Rate Limiting  │    │ • JSON API      │
-│ • Google Search │    │ • Error Handling │    │ • Statistics    │
-│ • Web Scraping  │    │ • Data Validation│    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Frontend      │◄───│   REST API       │───▶│  Scheduler      │
-│   Dashboard     │    │                  │    │                 │
-│                 │    │ • /jobs.csv      │    │ • 6-hour cycle  │
-│ • Real-time UI  │    │ • /jobs (JSON)   │    │ • Auto-start    │
-│ • Filtering     │    │ • /stats         │    │ • Manual trigger│
-│ • Export        │    │ • /collect       │    │ • Status API    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### Error Handling Strategy
-```javascript
-// Each collector handles failures independently
-const results = await Promise.all(
-  collectors.map(async (collector) => {
-    try {
-      return await collector.collectJobs();
-    } catch (error) {
-      console.error(`Error in ${collector.source}:`, error.message);
-      return []; // Return empty array to continue with other collectors
-    }
-  })
-);
-```
 
 ## 🚀 Performance Features
 
