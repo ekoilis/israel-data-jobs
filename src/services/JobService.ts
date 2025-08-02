@@ -9,7 +9,7 @@ export class JobService {
   private lastFetchTime: Date | null = null;
   
   // Configuration: set to true to use local static CSV, false to use remote server
-  private readonly USE_LOCAL_CSV = true;
+  private USE_LOCAL_CSV = true;
   
   // URLs for different data sources
   private readonly LOCAL_CSV_URL = '/cvs.txt';
@@ -26,7 +26,12 @@ export class JobService {
    * Get the appropriate CSV URL based on configuration
    */
   private getCSVUrl(): string {
-    return this.USE_LOCAL_CSV ? this.LOCAL_CSV_URL : this.REMOTE_SERVER_URL;
+    const url = this.USE_LOCAL_CSV ? this.LOCAL_CSV_URL : this.REMOTE_SERVER_URL;
+    // Switch to remote server after first invocation
+    if (this.USE_LOCAL_CSV) {
+      this.USE_LOCAL_CSV = false;
+    }
+    return url;
   }
 
   /**
