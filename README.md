@@ -2,6 +2,96 @@
 
 An automated system for collecting and displaying Data Scientist job postings in Israel. This application continuously monitors major tech companies and job platforms, providing real-time insights into the Israeli data science job market.
 
+## 📋 Development Status
+
+**Framework Status: ✅ Major Framework Ready**
+- ✅ Core collection service architecture complete
+- ✅ Scheduler service with automated 6-hour collection cycles
+- ✅ REST API endpoints for job data access
+- ✅ Interactive dashboard with filtering and search
+- ✅ CSV/JSON export functionality
+- ✅ GitHub Actions integration for automated collection
+
+**Scraping Details: ⚠️ Needs Refinement**
+- ⚠️ Individual collector field extraction needs optimization
+- ⚠️ Site-specific selectors require fine-tuning for accurate data capture
+- ⚠️ Some collectors may return incomplete or incorrectly parsed job fields
+- 🔧 Priority: Fix field mapping and data extraction per scraping site
+
+## 🏗️ System Architecture
+
+### Client-Server Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT SIDE                          │
+│  ┌─────────────────┐    ┌─────────────────────────────┐ │
+│  │  React Frontend │    │     Interactive Dashboard   │ │
+│  │                 │    │                             │ │
+│  │ • Job Dashboard │    │ • Real-time job filtering   │ │
+│  │ • Search & Filter│   │ • Statistics visualization │ │
+│  │ • Export Tools  │    │ • Manual collection trigger│ │
+│  │ • Real-time UI  │    │ • Responsive design        │ │
+│  └─────────────────┘    └─────────────────────────────┘ │
+│              │                         │                │
+│              └─────────────────────────┘                │
+└──────────────────────┼──────────────────────────────────┘
+                       │ HTTP/REST API
+                       │
+┌──────────────────────┼──────────────────────────────────┐
+│                   SERVER SIDE                           │
+│  ┌─────────────────┐    ┌─────────────────────────────┐ │
+│  │  Express.js API │    │     Collection Engine      │ │
+│  │                 │    │                             │ │
+│  │ • /jobs.csv     │    │ • JobCollectionService     │ │
+│  │ • /jobs (JSON)  │    │ • Multiple collectors      │ │
+│  │ • /stats        │    │ • Error handling           │ │
+│  │ • /collect      │    │ • Data validation          │ │
+│  │ • /scheduler    │    │ • Rate limiting            │ │
+│  └─────────────────┘    └─────────────────────────────┘ │
+│              │                         │                │
+│              └─────────────────────────┘                │
+│                       │                                 │
+│  ┌─────────────────┐  │  ┌─────────────────────────────┐ │
+│  │ Scheduler Service│  │  │    Data Collectors         │ │
+│  │                 │  │  │                             │ │
+│  │ • Cron-based    │  │  │ • JSearch API               │ │
+│  │ • 6-hour cycles │  │  │ • SerpAPI                   │ │
+│  │ • Auto-start    │  │  │ • Google Scraper            │ │
+│  │ • Manual trigger│  │  │ • Gong (Puppeteer)          │ │
+│  └─────────────────┘  │  │ • JobsCoil Scraper          │ │
+│                       │  │ • AllJobs Scraper           │ │
+│                       │  └─────────────────────────────┘ │
+│                       │                                 │
+│                       ▼                                 │
+│              ┌─────────────────┐                        │
+│              │  File Storage   │                        │
+│              │                 │                        │
+│              │ • CSV exports   │                        │
+│              │ • JSON data     │                        │
+│              │ • Statistics    │                        │
+│              │ • Timestamps    │                        │
+│              └─────────────────┘                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Technology Stack
+
+**Frontend (Client)**
+- **React 18** with TypeScript for type-safe development
+- **Vite** for fast development and optimized builds
+- **Tailwind CSS** with custom design system for modern UI
+- **shadcn/ui** components for consistent interface
+- **React Query** for efficient data fetching and caching
+
+**Backend (Server)**
+- **Node.js 18+** runtime environment
+- **Express.js** web framework for REST API
+- **Puppeteer** for browser automation (Gong collector)
+- **Cheerio** for HTML parsing and web scraping
+- **node-cron** for automated scheduling
+- **File-based storage** (CSV/JSON) for simplicity and portability
+
 ## 🎯 Features
 
 ### 📊 Automated Data Collection
@@ -24,7 +114,7 @@ An automated system for collecting and displaying Data Scientist job postings in
 
 ## 🏗️ Architecture
 
-### Core Components
+## 🔧 Core Components
 
 #### 1. Data Collection Layer (`server/services/JobCollectionService.js`)
 ```javascript
@@ -87,8 +177,28 @@ JobDashboard
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
+- **Node.js 18+** and npm (Required for both frontend and backend)
 - Modern web browser with localStorage support
+- Git for version control (optional)
+
+### Node.js Setup
+
+This application requires Node.js 18 or higher for optimal performance and compatibility.
+
+**Install Node.js:**
+1. **Download** from [nodejs.org](https://nodejs.org/) (LTS version recommended)
+2. **Verify installation**:
+   ```bash
+   node --version  # Should show v18.x.x or higher
+   npm --version   # Should show npm version
+   ```
+
+**Why Node.js 18+?**
+- **ES Modules support**: Modern JavaScript module system
+- **Puppeteer compatibility**: Required for Gong collector browser automation
+- **Performance improvements**: Better memory management and faster execution
+- **Security updates**: Latest security patches and vulnerability fixes
+- **API compatibility**: Required for modern npm packages used in collectors
 
 ### Installation
 
@@ -98,17 +208,24 @@ JobDashboard
    cd data-scientist-jobs-israel
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
-3. **Start development server**
+3. **Install server dependencies**
+   ```bash
+   cd server
+   npm install
+   cd ..
+   ```
+
+4. **Start development server**
    ```bash
    npm run dev
    ```
 
-4. **Open the application**
+5. **Open the application**
    Navigate to `http://localhost:8080`
 
 ## 🖥️ Server-Side Setup (Enhanced Features)
