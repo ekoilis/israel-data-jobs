@@ -17,11 +17,6 @@ class JSearchCollector {
         headers: {
           'x-rapidapi-host': 'jsearch.p.rapidapi.com',
           'x-rapidapi-key': '2382634436mshf7fd65cc08d1274p1a7adcjsndeaf8bc5bece'
-        },
-        params: {
-          query: 'Data Scientist OR Machine Learning Engineer OR Deep Learning Engineer OR AI Engineer OR Artificial Intelligence Engineer',
-          country: 'il',
-          date_posted: 'all'
         }
       });
 
