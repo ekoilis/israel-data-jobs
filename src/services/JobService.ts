@@ -246,7 +246,7 @@ export class JobService {
         location: 'Tel Aviv, Israel',
         description: 'Looking for a senior data scientist with experience in machine learning...',
         url: '#',
-        source: 'LinkedIn',
+        source: 'Other',
         postDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         collectionDate: new Date().toISOString(),
         salaryRange: '15,000 - 25,000 ILS',

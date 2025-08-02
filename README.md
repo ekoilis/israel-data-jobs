@@ -30,7 +30,6 @@ An automated system for collecting and displaying Data Scientist job postings in
 ```typescript
 // Main collection service coordinating all data sources
 JobCollectionService
-├── LinkedInCollector     // LinkedIn job scraping adapter
 ├── GoogleCollector       // Google careers API adapter  
 ├── MetaCollector         // Meta careers integration
 └── MobileyeCollector     // Mobileye job board adapter
@@ -170,27 +169,22 @@ Once the server is running, you can access:
 
 The server includes multiple specialized collectors:
 
-#### 1. LinkedIn Collector (`server/collectors/LinkedInCollector.js`)
-- **Purpose**: Collects data science jobs from LinkedIn
-- **Status**: Currently returns mock data (requires LinkedIn API access)
-- **Configuration**: No API key needed for mock data
+#### 1. Google Collector (`server/collectors/GoogleCollector.js`)
+- **Purpose**: Uses RapidAPI JSearch to collect developer jobs
+- **Status**: Active with real API integration
+- **Configuration**: API key configured in collector
 
-#### 2. Google Collector (`server/collectors/GoogleCollector.js`)
-- **Purpose**: Scrapes Google career opportunities
-- **Status**: Mock data implementation
-- **Configuration**: No API key required
-
-#### 3. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
+#### 2. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
 - **Purpose**: Collects jobs from Mobileye careers website
 - **Status**: Mock data implementation
 - **Target URL**: `https://www.mobileye.com/careers`
 
-#### 4. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
+#### 2. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
 - **Purpose**: Scrapes Israeli job board JobsCoil
 - **Status**: Mock data implementation
 - **Target URL**: `https://www.jobscoil.co.il`
 
-#### 5. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
+#### 3. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
 - **Purpose**: Collects from AllJobs platform
 - **Status**: Mock data implementation
 
@@ -198,10 +192,10 @@ The server includes multiple specialized collectors:
 
 For production use with real data sources, you'll need to configure API keys:
 
-#### LinkedIn Jobs (via JSearch API)
+#### Google Jobs (via JSearch API)
+The Google collector is already configured with RapidAPI JSearch integration. For your own API key:
 1. Get API key from [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
-2. Add to your environment or collector configuration
-3. Update `LinkedInCollector.js` to use real API calls
+2. Replace the API key in `GoogleCollector.js`
 
 #### Other Collectors
 Most collectors are designed to scrape public job boards and don't require API keys. However, for rate limiting and reliability, consider:
@@ -367,13 +361,13 @@ await CSVStorageService.exportCSV()
 
 ### Data Collection Sources
 
-#### LinkedIn Integration
+#### Google Integration
 ```typescript
-class LinkedInCollector extends JobCollector {
-  source = 'LinkedIn';
+class GoogleCollector extends JobCollector {
+  source = 'Google';
   
   async collect(): Promise<CollectionResult> {
-    // Collects Data Scientist positions from LinkedIn Israel
+    // Uses RapidAPI JSearch to collect developer positions
     // Handles rate limiting and authentication
     // Returns structured job data
   }
