@@ -30,7 +30,7 @@ An automated system for collecting and displaying Data Scientist job postings in
 ```typescript
 // Main collection service coordinating all data sources
 JobCollectionService
-├── GoogleCollector       // Google careers API adapter  
+├── JSearchCollector      // JSearch API (LinkedIn, Indeed, Glassdoor, ZipRecruiter, etc.)
 ├── MetaCollector         // Meta careers integration
 └── MobileyeCollector     // Mobileye job board adapter
 ```
@@ -169,8 +169,9 @@ Once the server is running, you can access:
 
 The server includes multiple specialized collectors:
 
-#### 1. Google Collector (`server/collectors/GoogleCollector.js`)
-- **Purpose**: Uses RapidAPI JSearch to collect developer jobs
+#### 1. JSearch Collector (`server/collectors/JSearchCollector.js`)
+- **Purpose**: Uses RapidAPI JSearch to collect jobs from major job boards
+- **Sources**: LinkedIn, Indeed, Glassdoor, ZipRecruiter, and other major job sites
 - **Status**: Active with real API integration
 - **Configuration**: API key configured in collector
 
@@ -192,10 +193,10 @@ The server includes multiple specialized collectors:
 
 For production use with real data sources, you'll need to configure API keys:
 
-#### Google Jobs (via JSearch API)
-The Google collector is already configured with RapidAPI JSearch integration. For your own API key:
+#### JSearch API (Multiple Job Boards)
+The JSearch collector aggregates jobs from major job boards including LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others. For your own API key:
 1. Get API key from [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
-2. Replace the API key in `GoogleCollector.js`
+2. Replace the API key in `JSearchCollector.js`
 
 #### Other Collectors
 Most collectors are designed to scrape public job boards and don't require API keys. However, for rate limiting and reliability, consider:
@@ -361,13 +362,14 @@ await CSVStorageService.exportCSV()
 
 ### Data Collection Sources
 
-#### Google Integration
+#### JSearch Integration
 ```typescript
-class GoogleCollector extends JobCollector {
-  source = 'Google';
+class JSearchCollector extends JobCollector {
+  source = 'JSearch';
   
   async collect(): Promise<CollectionResult> {
-    // Uses RapidAPI JSearch to collect developer positions
+    // Uses RapidAPI JSearch to collect jobs from major job boards
+    // Sources: LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others
     // Handles rate limiting and authentication
     // Returns structured job data
   }
@@ -375,7 +377,7 @@ class GoogleCollector extends JobCollector {
 ```
 
 #### Company Career Pages
-- **Google**: Direct integration with Google Careers API
+- **JSearch**: Aggregates from LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others
 - **Meta**: Meta careers page scraping
 - **Mobileye**: Mobileye job board integration
 - **Others**: Extensible system for additional sources

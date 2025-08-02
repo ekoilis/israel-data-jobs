@@ -5,7 +5,7 @@ export interface JobPosting {
   location: string;
   description: string;
   url: string;
-  source: 'Google' | 'Meta' | 'Mobileye' | 'Other';
+  source: 'JSearch' | 'Meta' | 'Mobileye' | 'Other';
   postDate: string;
   collectionDate: string;
   salaryRange?: string;

@@ -1,10 +1,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-class GoogleCollector {
+class JSearchCollector {
   constructor() {
-    this.source = 'Google';
-    this.baseUrl = 'https://www.google.com/search';
+    this.source = 'JSearch';
+    this.baseUrl = 'https://jsearch.p.rapidapi.com';
   }
 
   async collectJobs(keywords = 'data scientist jobs', location = 'Israel') {
@@ -25,7 +25,7 @@ class GoogleCollector {
       const jobs = response.data.data || [];
       
       const mappedJobs = jobs.map((job, index) => ({
-        id: `google-${Date.now()}-${index}`,
+        id: `jsearch-${Date.now()}-${index}`,
         title: job.job_title || 'Unknown Title',
         company: job.employer_name || 'Unknown Company',
         location: job.job_city && job.job_state ? `${job.job_city}, ${job.job_state}` : (job.job_country || 'Unknown Location'),
@@ -83,4 +83,4 @@ class GoogleCollector {
   }
 }
 
-module.exports = GoogleCollector;
+module.exports = JSearchCollector;

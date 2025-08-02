@@ -261,7 +261,7 @@ export class JobService {
         location: 'Jerusalem, Israel',
         description: 'Join our team to build cutting-edge AI solutions...',
         url: '#',
-        source: 'Google',
+        source: 'JSearch',
         postDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         collectionDate: new Date().toISOString(),
         jobType: 'Full-time',
