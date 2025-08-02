@@ -12,7 +12,7 @@ const path = require('path');
 class LocalJobCrawler {
   constructor() {
     this.jobCollectionService = new JobCollectionService();
-    this.outputDir = path.join(__dirname, 'output');
+    this.publicDir = path.join(__dirname, '..', 'public');
   }
 
   async run() {
@@ -20,9 +20,9 @@ class LocalJobCrawler {
     console.log('='.repeat(50));
     
     try {
-      // Ensure output directory exists
-      if (!fs.existsSync(this.outputDir)) {
-        fs.mkdirSync(this.outputDir, { recursive: true });
+      // Ensure public directory exists
+      if (!fs.existsSync(this.publicDir)) {
+        fs.mkdirSync(this.publicDir, { recursive: true });
       }
 
       // Collect jobs from all sources
@@ -36,29 +36,25 @@ class LocalJobCrawler {
       // Generate CSV data
       const csvData = this.jobCollectionService.toCSV();
       
-      // Save to file with timestamp
+      // Save to file with timestamp in public directory
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `jobs-${timestamp}.csv`;
-      const filepath = path.join(this.outputDir, filename);
+      const filepath = path.join(this.publicDir, filename);
       
       fs.writeFileSync(filepath, csvData, 'utf8');
       
       // Also save as latest.csv for easy access
-      const latestPath = path.join(this.outputDir, 'latest.csv');
+      const latestPath = path.join(this.publicDir, 'latest.csv');
       fs.writeFileSync(latestPath, csvData, 'utf8');
       
       // Save to public/cvs.txt for dashboard use
-      const publicDir = path.join(__dirname, '..', 'public');
-      if (!fs.existsSync(publicDir)) {
-        fs.mkdirSync(publicDir, { recursive: true });
-      }
-      const publicCvsPath = path.join(publicDir, 'cvs.txt');
+      const publicCvsPath = path.join(this.publicDir, 'cvs.txt');
       fs.writeFileSync(publicCvsPath, csvData, 'utf8');
       
       // Generate statistics
       const stats = this.jobCollectionService.getStats();
       const statsFilename = `stats-${timestamp}.json`;
-      const statsPath = path.join(this.outputDir, statsFilename);
+      const statsPath = path.join(this.publicDir, statsFilename);
       
       fs.writeFileSync(statsPath, JSON.stringify(stats, null, 2), 'utf8');
       
@@ -70,10 +66,10 @@ class LocalJobCrawler {
       console.log(`   Companies: ${stats.companiesCount}`);
       console.log(`   New jobs (24h): ${stats.newJobs}`);
       console.log('');
-      console.log('📁 Files saved locally:');
+      console.log('📁 Files saved to public directory:');
       console.log(`   CSV: ${filepath}`);
       console.log(`   Latest: ${latestPath}`);
-      console.log(`   Public: ${publicCvsPath}`);
+      console.log(`   Dashboard: ${publicCvsPath}`);
       console.log(`   Stats: ${statsPath}`);
       console.log('');
       console.log('🔍 Jobs by source:');
@@ -82,7 +78,7 @@ class LocalJobCrawler {
       });
       
       console.log('');
-      console.log('📝 Note: Files saved locally only - no GitHub push performed');
+      console.log('📝 Note: All files saved to public directory only - no GitHub push performed');
       
     } catch (error) {
       console.error('❌ Error during job collection:', error.message);
