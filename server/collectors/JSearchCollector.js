@@ -11,14 +11,20 @@ class JSearchCollector {
     try {
       console.log(`Collecting jobs from ${this.source}...`);
       
-      // Prepare query string
-      const query = `${keywords} in ${location}`.replace(/\s+/g, '%20');
-      const url = `https://jsearch.p.rapidapi.com/search?query=${query}&page=1&num_pages=1&country=us&date_posted=all`;
+      const url = 'https://jsearch.p.rapidapi.com/search';
       
       const response = await axios.get(url, {
         headers: {
           'x-rapidapi-host': 'jsearch.p.rapidapi.com',
           'x-rapidapi-key': '2382634436mshf7fd65cc08d1274p1a7adcjsndeaf8bc5bece'
+        },
+        params: {
+          query: 'Data Scientist OR Machine Learning Engineer OR Deep Learning Engineer OR AI Engineer OR Artificial Intelligence Engineer',
+          location: 'Israel',
+          page: 1,
+          num_pages: 1,
+          country: 'us',
+          date_posted: 'all'
         }
       });
 
