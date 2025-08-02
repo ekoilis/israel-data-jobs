@@ -21,9 +21,7 @@ class JSearchCollector {
         params: {
           query: 'Data Scientist OR Machine Learning Engineer OR Deep Learning Engineer OR AI Engineer OR Artificial Intelligence Engineer',
           location: 'Israel',
-          page: 1,
-          num_pages: 1,
-          country: 'us',
+          country: 'il',
           date_posted: 'all'
         }
       });
