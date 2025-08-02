@@ -8,12 +8,12 @@ const AllJobsCollector = require('../collectors/AllJobsCollector');
 class JobCollectionService {
   constructor() {
     this.collectors = [
-      // new JSearchCollector(),
-      // new SerpAPICollector(),
-      // new GoogleCollector(),
+      new JSearchCollector(),
+      new SerpAPICollector(),
+      new GoogleCollector(),
       new GongCollector(),
-      // new JobsCoilCollector(),
-      // new AllJobsCollector()
+      new JobsCoilCollector(),
+      new AllJobsCollector()
     ];
     this.allJobs = [];
     this.lastCollectionTime = null;
