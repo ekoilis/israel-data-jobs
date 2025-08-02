@@ -5,8 +5,8 @@ An automated system for collecting and displaying Data Scientist job postings in
 ## 🎯 Features
 
 ### 📊 Automated Data Collection
-- **Multi-source collection**: LinkedIn, Google, Meta, Mobileye, and other major employers
-- **Scheduled automation**: Runs every 12 hours automatically
+- **Multi-source collection**: JSearch API, SerpAPI, Google scraping, Mobileye, JobsCoil, AllJobs
+- **Scheduled automation**: Runs every 6 hours automatically
 - **Data persistence**: Stores all job data in CSV format
 - **Duplicate prevention**: Intelligent filtering to avoid duplicate entries
 
@@ -26,30 +26,31 @@ An automated system for collecting and displaying Data Scientist job postings in
 
 ### Core Components
 
-#### 1. Data Collection Layer (`src/services/JobCollectionService.ts`)
-```typescript
+#### 1. Data Collection Layer (`server/services/JobCollectionService.js`)
+```javascript
 // Main collection service coordinating all data sources
 JobCollectionService
-├── JSearchCollector      // JSearch API (LinkedIn, Indeed, Glassdoor, ZipRecruiter, etc.)
-├── GoogleCollector       // SerpAPI Google Jobs search integration
-├── MetaCollector         // Meta careers integration
-└── MobileyeCollector     // Mobileye job board adapter
+├── JSearchCollector       // RapidAPI JSearch (LinkedIn, Indeed, Glassdoor, etc.)
+├── SerpAPICollector       // SerpAPI Google Jobs search integration
+├── GoogleCollector        // Direct Google search scraping for careers.google.com
+├── MobileyeCollector      // Mobileye careers page scraping
+├── JobsCoilCollector      // Israeli JobsCoil platform scraping
+└── AllJobsCollector       // AllJobs platform scraping
 ```
 
 **Key Features:**
-- **Adapter Pattern**: Each job source implements the `JobCollector` interface
+- **Adapter Pattern**: Each job source implements consistent collector interface
 - **Error Handling**: Graceful failure handling per source
 - **Data Validation**: Ensures data quality and consistency
 - **Rate Limiting**: Respects API limits and prevents blocking
 
-#### 2. Storage Layer (`CSVStorageService`)
-```typescript
-// CSV-based storage with localStorage persistence
-CSVStorageService
-├── readJobs()           // Load all jobs from storage
-├── appendJobs()         // Add new jobs, prevent duplicates
-├── exportCSV()          // Generate downloadable CSV
-└── saveJobs()           // Persist job data
+#### 2. Storage Layer (CSV-based)
+```javascript
+// File-based storage with multiple output formats
+Output Structure
+├── jobs-[timestamp].csv   // Timestamped job data
+├── latest.csv            // Most recent job data
+└── stats-[timestamp].json // Collection statistics
 ```
 
 **Data Schema:**
@@ -57,20 +58,20 @@ CSVStorageService
 id,title,company,location,description,url,source,postDate,collectionDate,salaryRange,jobType,experienceLevel,tags
 ```
 
-#### 3. Scheduling System (`src/services/SchedulerService.ts`)
-```typescript
+#### 3. Scheduling System (`server/services/SchedulerService.js`)
+```javascript
 // Application manager coordinating automated collection
 SchedulerService
-├── startScheduler()     // Begin automated 12-hour collection cycle
-├── stopScheduler()      // Halt automated collection
-├── runCollection()      // Execute single collection cycle
+├── start()              // Begin automated 6-hour collection cycle
+├── stop()               // Halt automated collection
+├── triggerCollection()  // Execute single collection cycle
 └── getStatus()          // Monitor scheduler state
 ```
 
 **Features:**
-- **Persistent scheduling**: Remembers state across browser sessions
-- **Event-driven updates**: Real-time UI notifications
-- **Flexible intervals**: Demo mode (30s) and production mode (12h)
+- **Automatic startup**: Begins collecting immediately when server starts
+- **Event-driven updates**: Real-time status notifications
+- **Flexible intervals**: 6-hour production intervals
 - **Error recovery**: Continues operation despite individual failures
 
 #### 4. Dashboard Interface (`src/components/JobDashboard.tsx`)
@@ -110,7 +111,7 @@ JobDashboard
 4. **Open the application**
    Navigate to `http://localhost:8080`
 
-## 🖥️ Server-Side Setup (Optional for Enhanced Features)
+## 🖥️ Server-Side Setup (Enhanced Features)
 
 The application includes a powerful Node.js server for advanced job collection capabilities with multiple collectors and automated scheduling.
 
@@ -166,58 +167,92 @@ Once the server is running, you can access:
 - `GET /scheduler/status` - Check scheduler status
 - `GET /health` - Server health check
 
-### Job Collectors
+## 📋 Job Collectors
 
-The server includes multiple specialized collectors:
+The server includes multiple specialized collectors for comprehensive job data gathering:
 
-#### 1. JSearch Collector (`server/collectors/JSearchCollector.js`)
+### 1. JSearch Collector (`server/collectors/JSearchCollector.js`)
 - **Purpose**: Uses RapidAPI JSearch to collect jobs from major job boards
 - **Sources**: LinkedIn, Indeed, Glassdoor, ZipRecruiter, and other major job sites
 - **Status**: Active with real API integration
-- **Configuration**: API key configured in collector
+- **Features**:
+  - Salary extraction when available
+  - Smart experience level mapping
+  - Technology tag extraction
+  - Location filtering for Israel
+  - Error handling with fallback
 
-#### 2. Google Collector (`server/collectors/GoogleCollector.js`)
+### 2. SerpAPI Collector (`server/collectors/SerpAPICollector.js`)
 - **Purpose**: Uses SerpAPI to search Google Jobs for job postings
 - **Status**: Active with real API integration
-- **Configuration**: SerpAPI key configured in collector
+- **Features**:
+  - Google Jobs search integration
+  - Advanced query building
+  - Salary and job type extraction
+  - Technology tag identification
+  - Date parsing and normalization
 
-#### 3. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
+### 3. Google Collector (`server/collectors/GoogleCollector.js`)
+- **Purpose**: Scrapes Google search results directly for careers.google.com jobs
+- **Query Format**: `site:careers.google.com AI engineer in Israel`
+- **Status**: Active web scraping implementation
+- **Features**:
+  - Direct Google search scraping
+  - HTML parsing with Cheerio
+  - Clean URL extraction from Google redirects
+  - Location extraction from job titles/descriptions
+  - Technology stack identification
+
+### 4. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
 - **Purpose**: Scrapes Mobileye careers page for job openings
 - **Status**: Active web scraping implementation
 - **Target URL**: `https://www.mobileye.com/careers`
+- **Features**:
+  - Career page parsing
+  - Job detail extraction
+  - Location-based filtering
 
-#### 4. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
+### 5. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
 - **Purpose**: Scrapes Israeli job board JobsCoil
 - **Status**: Active web scraping implementation
 - **Target URL**: `https://www.jobscoil.co.il`
+- **Features**:
+  - Hebrew language support
+  - Israeli market focus
+  - Local job board integration
 
-#### 5. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
+### 6. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
 - **Purpose**: Collects from AllJobs platform
 - **Status**: Active web scraping implementation
 - **Target URL**: `https://www.alljobs.co.il`
+- **Features**:
+  - Israeli job platform integration
+  - Local market specialization
+  - Hebrew/English job parsing
 
-### API Key Configuration
+## 🔑 API Key Configuration
 
 For production use with real data sources, you'll need to configure API keys:
 
-#### JSearch API (Multiple Job Boards)
+### JSearch API (Multiple Job Boards)
 The JSearch collector aggregates jobs from major job boards including LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others. For your own API key:
 1. Get API key from [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
-2. Replace the API key in `JSearchCollector.js`
+2. Replace the API key in `server/collectors/JSearchCollector.js`
 
-#### Google Jobs (via SerpAPI)
-The Google collector uses SerpAPI to search Google Jobs. For your own API key:
+### SerpAPI (Google Jobs)
+The SerpAPI collector uses SerpAPI to search Google Jobs. For your own API key:
 1. Get API key from [SerpAPI](https://serpapi.com/)
-2. Replace the API key in `GoogleCollector.js`
+2. Replace the API key in `server/collectors/SerpAPICollector.js`
 
-#### Web Scraping Collectors
-All collectors now use real web scraping implementations:
+### Web Scraping Collectors
+All web scraping collectors include:
 - **Robust parsing**: Multiple fallback selectors for different site layouts
 - **Error handling**: Graceful fallbacks when scraping fails
 - **Rate limiting**: Built-in delays and proper headers to avoid blocking
 - **Hebrew support**: Handles Hebrew text and Israeli job sites
+- **User agent rotation**: Prevents blocking with realistic browser headers
 
-### Scheduler Service
+## ⏰ Scheduler Service
 
 The server includes an automated scheduler (`server/services/SchedulerService.js`):
 
@@ -239,17 +274,18 @@ scheduler.triggerCollection();  // Manual collection trigger
 scheduler.getStatus();          // Get current status
 ```
 
-### GitHub Actions Integration
+## 🔄 GitHub Actions Integration
 
 The project includes automated GitHub Actions for continuous job collection:
 
 **Workflow file**: `.github/workflows/collect-jobs.yml`
 
 **Features:**
-- **Monthly schedule**: Runs on the 1st of each month
-- **Manual trigger**: Can be run on-demand
+- **Scheduled runs**: Configurable collection intervals
+- **Manual trigger**: Can be run on-demand from GitHub
 - **Automatic commits**: Updates and commits job data to repository
 - **Node.js 18**: Uses latest Node.js version for reliability
+- **Multi-collector support**: Runs all collectors in parallel
 
 **Setup:**
 1. The workflow automatically detects GitHub Actions environment
@@ -257,20 +293,40 @@ The project includes automated GitHub Actions for continuous job collection:
 3. Commits updated CSV files to repository
 4. No additional configuration needed
 
-### Data Output
+## 📊 Data Output
 
-**Server Mode Output:**
+### Server Mode Output
 - Real-time API access to job data
 - CSV downloads via `/jobs.csv` endpoint
 - JSON data via `/jobs` endpoint
+- Statistics via `/stats` endpoint
 
-**Crawler Mode Output:**
+### Crawler Mode Output
 Files saved to `server/output/`:
 - `jobs-[timestamp].csv` - Timestamped job data
 - `latest.csv` - Most recent job data
 - `stats-[timestamp].json` - Collection statistics
 
-### Frontend Integration
+### Data Schema Structure
+```javascript
+{
+  id: 'unique-job-identifier',
+  title: 'Job Title',
+  company: 'Company Name',
+  location: 'Job Location',
+  description: 'Job Description',
+  url: 'Original Job Posting URL',
+  source: 'Collector Source',
+  postDate: 'ISO Date String',
+  collectionDate: 'ISO Date String',
+  salaryRange: 'Salary Information',
+  jobType: 'Full-time | Part-time | Contract | Internship',
+  experienceLevel: 'Entry | Mid | Senior | Executive',
+  tags: ['Technology', 'Skills', 'Keywords']
+}
+```
+
+## 🔧 Frontend Integration
 
 To connect the frontend to your local server:
 
@@ -291,174 +347,49 @@ To connect the frontend to your local server:
 
 3. **Use the "Start Job Collection" button** in the dashboard to trigger server-side collection
 
-### Troubleshooting
+## 🐛 Troubleshooting
 
 **Common Issues:**
 
 1. **Port conflicts**: Server runs on port 3001, ensure it's available
 2. **CORS errors**: Server includes CORS middleware for frontend access
 3. **Collection failures**: Check individual collector error logs
-4. **Memory issues**: For large datasets, consider implementing pagination
+4. **API rate limits**: Respect rate limits for external APIs
+5. **Memory issues**: For large datasets, consider implementing pagination
 
 **Debugging:**
 - Check server console for detailed collection logs
 - Use `/health` endpoint to verify server status
 - Monitor `/stats` endpoint for collection metrics
-
-### API Configuration
-
-#### JSearch API Setup (Required for LinkedIn Job Data)
-
-To enable real LinkedIn job data collection, you need to configure the JSearch API:
-
-**Step 1: Get JSearch API Key**
-1. Visit [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
-2. Subscribe (free tier available)
-3. Copy your API key
-
-**Step 2: Add API Key to Supabase Secrets**
-1. Go to your Supabase dashboard
-2. Navigate to **Project Settings** → **Edge Functions** → **Secrets**
-3. Add a new secret:
-   - **Name**: `JSEARCH_API_KEY`
-   - **Value**: Your RapidAPI key for JSearch
-
-🚀 **Features included with JSearch integration:**
-- Real job data from LinkedIn (via JSearch)
-- Salary extraction when available
-- Smart experience level mapping
-- Technology tag extraction
-- Location filtering for Israel
-- Error handling with fallback
-
-The collector will now fetch real LinkedIn jobs for Israeli data science positions!
-
-### First Time Setup
-
-1. **Start the collection system**
-   - Click "Start Scheduler" to begin automated collection
-   - Or use "Manual Collection" for immediate data gathering
-
-2. **Explore the dashboard**
-   - View collected jobs and statistics
-   - Use filters to narrow down results
-   - Export data as needed
+- Review individual collector error messages
 
 ## 📋 Usage Guide
 
 ### Dashboard Operations
 
 #### Starting Automated Collection
-```typescript
-// The scheduler runs every 12 hours in production
-// Demo mode uses 30-second intervals for testing
-schedulerService.startScheduler(useDemoInterval: boolean)
+```javascript
+// The scheduler runs every 6 hours in production
+// Can be manually triggered via dashboard
+schedulerService.start()
 ```
 
 #### Manual Data Collection
-```typescript
+```javascript
 // Trigger immediate collection from all sources
-await schedulerService.runCollection()
+await jobCollectionService.collectAllJobs()
 ```
 
 #### Filtering Jobs
 - **Search**: Enter keywords to search titles, companies, or skills
-- **Company Filter**: Select specific companies (Google, Meta, etc.)
-- **Source Filter**: Filter by collection source (LinkedIn, Google, etc.)
+- **Company Filter**: Select specific companies (Google, Mobileye, etc.)
+- **Source Filter**: Filter by collection source (JSearch, Google, etc.)
 - **Experience Level**: Filter by required experience (Entry, Mid, Senior, Executive)
 
 #### Exporting Data
-```typescript
-// Export all job data as CSV file
-await CSVStorageService.exportCSV()
-```
-
-### Data Collection Sources
-
-#### JSearch Integration
-```typescript
-class JSearchCollector extends JobCollector {
-  source = 'JSearch';
-  
-  async collect(): Promise<CollectionResult> {
-    // Uses RapidAPI JSearch to collect jobs from major job boards
-    // Sources: LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others
-    // Handles rate limiting and authentication
-    // Returns structured job data
-  }
-}
-```
-
-#### Google Integration
-```typescript
-class GoogleCollector extends JobCollector {
-  source = 'Google';
-  
-  async collect(): Promise<CollectionResult> {
-    // Uses SerpAPI Google Jobs search to find job postings
-    // Handles search queries and location filtering
-    // Returns structured job data from Google Jobs
-  }
-}
-```
-
-#### Company Career Pages
-- **JSearch**: Aggregates from LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others
-- **Google**: Direct Google Jobs search via SerpAPI
-- **Meta**: Meta careers page scraping
-- **Mobileye**: Mobileye job board integration
-- **Others**: Extensible system for additional sources
-
-## 🔧 Technical Implementation
-
-### Data Flow Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Job Sources   │───▶│  Collection      │───▶│   CSV Storage   │
-│                 │    │  Adapters        │    │                 │
-│ • LinkedIn      │    │                  │    │ • localStorage  │
-│ • Google        │    │ • Rate Limiting  │    │ • Export        │
-│ • Meta          │    │ • Error Handling │    │ • Deduplication │
-│ • Mobileye      │    │ • Data Validation│    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Dashboard     │◄───│   Scheduler      │───▶│  Event System   │
-│                 │    │                  │    │                 │
-│ • Real-time UI  │    │ • 12-hour cycle  │    │ • collectionStarted
-│ • Filtering     │    │ • State persist  │    │ • collectionCompleted
-│ • Statistics    │    │ • Manual trigger │    │ • schedulerStateChanged
-│ • Export        │    │                  │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### Error Handling Strategy
-
-```typescript
-// Each collector handles failures independently
-try {
-  const result = await collector.collect();
-  results.push(result);
-} catch (error) {
-  // Log error but continue with other collectors
-  results.push({
-    success: false,
-    jobsCollected: 0,
-    errors: [error.message],
-    source: collector.source,
-    timestamp: new Date().toISOString()
-  });
-}
-```
-
-### Performance Optimizations
-
-1. **Lazy Loading**: Dashboard components load incrementally
-2. **Efficient Filtering**: Client-side filtering with optimized algorithms
-3. **Caching**: localStorage-based persistence reduces API calls
-4. **Event-driven Updates**: Real-time UI updates without polling
+- Use the `/jobs.csv` endpoint for CSV export
+- Use the `/jobs` endpoint for JSON data
+- Dashboard provides direct download links
 
 ## 🎨 Design System
 
@@ -488,194 +419,114 @@ interface JobPosting {
   location: string;              // Job location (Israeli cities)
   description: string;           // Job description
   url: string;                   // Link to original posting
-  source: 'LinkedIn' | 'Google' | 'Meta' | 'Mobileye' | 'Other';
-  postDate: string;              // Original posting date (YYYY-MM-DD)
-  collectionDate: string;        // Date collected by system (YYYY-MM-DD)
-  salaryRange?: string;          // Salary information if available
+  source: 'JSearch' | 'SerpAPI' | 'Google' | 'Mobileye' | 'JobsCoil' | 'AllJobs';
+  postDate: string;              // ISO date string
+  collectionDate: string;        // ISO date string
+  salaryRange?: string;          // Optional salary information
   jobType: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
   experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Executive';
-  tags: string[];                // Skills and technologies
+  tags: string[];                // Technology and skill tags
 }
 ```
 
-## 🔄 Automation Details
-
-### Collection Schedule
-- **Production**: Every 12 hours (00:00 and 12:00 UTC+2)
-- **Demo Mode**: Every 30 seconds (for testing)
-- **Manual**: On-demand via dashboard button
-
-### Data Processing Pipeline
-1. **Collection**: Gather jobs from all sources simultaneously
-2. **Validation**: Ensure data quality and completeness
-3. **Deduplication**: Remove duplicate entries by URL and title
-4. **Storage**: Append to CSV with timestamp
-5. **Notification**: Update dashboard with results
-
-### State Persistence
+### Collection Statistics
 ```typescript
-// Scheduler state persists across browser sessions
-interface SchedulerState {
-  isRunning: boolean;
-  lastRunTime: string | null;
-  nextRunTime: string | null;
+interface JobStats {
+  totalJobs: number;                              // Total jobs collected
+  newJobs: number;                               // Jobs collected in last 24h
+  companiesCount: number;                        // Unique companies
+  sourceDistribution: Record<string, number>;    // Jobs per source
+  experienceLevelDistribution: Record<string, number>; // Jobs per level
+  lastCollectionDate: string;                    // Last collection timestamp
 }
 ```
 
-## 🛠️ Development
+## 🔄 System Architecture
 
-### Adding New Job Sources
+### Data Flow
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Job Sources   │───▶│  Collection      │───▶│   File Storage  │
+│                 │    │  Service         │    │                 │
+│ • JSearch API   │    │                  │    │ • CSV Export    │
+│ • SerpAPI       │    │ • Rate Limiting  │    │ • JSON API      │
+│ • Google Search │    │ • Error Handling │    │ • Statistics    │
+│ • Web Scraping  │    │ • Data Validation│    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                                ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │◄───│   REST API       │───▶│  Scheduler      │
+│   Dashboard     │    │                  │    │                 │
+│                 │    │ • /jobs.csv      │    │ • 6-hour cycle  │
+│ • Real-time UI  │    │ • /jobs (JSON)   │    │ • Auto-start    │
+│ • Filtering     │    │ • /stats         │    │ • Manual trigger│
+│ • Export        │    │ • /collect       │    │ • Status API    │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
 
-1. **Create collector class**
-   ```typescript
-   class NewSourceCollector extends JobCollector {
-     source = 'NewSource';
-     
-     async collect(): Promise<CollectionResult> {
-       // Implement source-specific collection logic
-     }
-     
-     protected getCompanyName(): string {
-       // Return company name(s) for this source
-     }
-   }
-   ```
+### Error Handling Strategy
+```javascript
+// Each collector handles failures independently
+const results = await Promise.all(
+  collectors.map(async (collector) => {
+    try {
+      return await collector.collectJobs();
+    } catch (error) {
+      console.error(`Error in ${collector.source}:`, error.message);
+      return []; // Return empty array to continue with other collectors
+    }
+  })
+);
+```
 
-2. **Register with service**
-   ```typescript
-   // Add to JobCollectionService.initializeCollectors()
-   this.collectors.push(new NewSourceCollector());
-   ```
+## 🚀 Performance Features
 
-### Extending Dashboard Features
-
-1. **Add new filters**
-   ```typescript
-   // Add filter state
-   const [newFilter, setNewFilter] = useState<string>('all');
-   
-   // Update filterJobs() function
-   if (newFilter !== 'all') {
-     filtered = filtered.filter(job => job.someProperty === newFilter);
-   }
-   ```
-
-2. **Add statistics**
-   ```typescript
-   // Update calculateStats() function
-   const newDistribution: Record<string, number> = {};
-   jobData.forEach(job => {
-     newDistribution[job.someProperty] = 
-       (newDistribution[job.someProperty] || 0) + 1;
-   });
-   ```
-
-## 🚀 Deployment
-
-### Production Deployment
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy static files**
-   - Upload `dist/` folder to web server
-   - Configure web server for SPA routing
-
-3. **Environment Configuration**
-   - Update collection intervals for production
-   - Configure API keys for real data sources
-   - Set up monitoring and logging
-
-### GitHub Integration
-This project is designed to work seamlessly with Lovable's GitHub integration:
-
-1. **Connect to GitHub** via Lovable interface
-2. **Automatic syncing** of code changes
-3. **Version control** for collaborative development
-4. **CI/CD integration** possibilities
+1. **Parallel Collection**: All collectors run simultaneously
+2. **Efficient Parsing**: Optimized HTML parsing with Cheerio
+3. **Rate Limiting**: Built-in delays to prevent blocking
+4. **Error Recovery**: System continues despite individual failures
+5. **Caching**: File-based storage reduces redundant API calls
+6. **Streaming**: Large datasets handled efficiently
 
 ## 📈 Monitoring & Analytics
 
-### System Health Metrics
-- **Collection success rate**: Percentage of successful runs
-- **Data freshness**: Time since last successful collection
-- **Source reliability**: Success rate per job source
-- **Growth trends**: Job posting volume over time
+### Collection Metrics
+- **Success Rate**: Track successful vs failed collections per source
+- **Performance**: Monitor collection time and job count trends
+- **Error Tracking**: Log and analyze collection errors
+- **Source Comparison**: Compare effectiveness of different collectors
 
-### Dashboard Metrics
-- **Total jobs tracked**: Current database size
-- **Daily new jobs**: Fresh postings per day
-- **Company diversity**: Number of unique employers
-- **Technology trends**: Most common skill requirements
+### Dashboard Analytics
+- **Job Trends**: Track job posting patterns over time
+- **Company Analysis**: Monitor hiring activity by company
+- **Technology Trends**: Identify popular skills and technologies
+- **Location Distribution**: Analyze job locations across Israel
 
-## 🔒 Privacy & Compliance
+## 🔮 Future Enhancements
 
-### Data Handling
-- **Public data only**: Collects publicly available job postings
-- **No personal data**: Does not store applicant information
-- **Respectful scraping**: Implements rate limiting and respectful delays
-- **Terms compliance**: Adheres to platform terms of service
+### Planned Features
+- **Database Integration**: PostgreSQL/MongoDB for advanced queries
+- **Real-time Notifications**: Email/Slack alerts for new jobs
+- **Machine Learning**: Job recommendation engine
+- **Advanced Analytics**: Salary trend analysis and market insights
+- **Mobile App**: React Native mobile application
+- **API Authentication**: Secure API access with rate limiting
 
-### Local Storage
-- **Browser-based**: All data stored locally in user's browser
-- **No external database**: Privacy-first approach
-- **User control**: Users can clear data anytime
-- **Portable**: Easy export/import of job data
+### Extensibility
+- **Plugin System**: Easy addition of new job sources
+- **Custom Filters**: User-defined filtering criteria
+- **Webhook Integration**: Real-time data integration
+- **Export Formats**: Excel, PDF, and database exports
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
 
 ## 🤝 Contributing
 
-### Development Setup
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Make changes with proper commit messages
-4. Test thoroughly across browsers
-5. Submit pull request with detailed description
-
-### Code Standards
-- **TypeScript**: Strict type checking enabled
-- **ESLint**: Code quality enforcement
-- **Component structure**: Logical separation of concerns
-- **Documentation**: Comprehensive inline comments
-
-### Testing Strategy
-- **Manual testing**: Dashboard functionality
-- **Collection testing**: Verify data accuracy
-- **Performance testing**: Large dataset handling
-- **Browser compatibility**: Modern browser support
-
-## 📝 License
-
-This project is part of a demonstration system for automated job data collection. 
+Contributions are welcome! Please read the contributing guidelines and submit pull requests for any improvements.
 
 ## 📞 Support
 
-For questions, issues, or feature requests:
-- **GitHub Issues**: Create detailed bug reports
-- **Feature Requests**: Propose enhancements with use cases
-- **Documentation**: Improve guides and examples
-
----
-
-**Built with ❤️ for the Israeli Data Science Community**
-
-This system helps data professionals stay informed about opportunities in Israel's thriving tech ecosystem. By automating the collection and presentation of job data, we make it easier for talent and companies to connect.
-
-## 🎯 Future Enhancements
-
-### Planned Features
-- **Email notifications**: Daily/weekly job digest emails
-- **Advanced analytics**: Salary trends and market insights
-- **Company profiles**: Detailed employer information
-- **Skill tracking**: Technology demand analysis
-- **Mobile app**: React Native companion app
-- **API integration**: RESTful API for external integrations
-
-### Technical Improvements
-- **Real-time updates**: WebSocket-based live updates
-- **Advanced search**: Elasticsearch integration
-- **Data visualization**: Interactive charts and graphs
-- **Machine learning**: Job recommendation system
-- **Performance optimization**: Virtual scrolling for large datasets
-
-*Last updated: January 2025*
+For questions, issues, or feature requests, please open an issue on the GitHub repository.
