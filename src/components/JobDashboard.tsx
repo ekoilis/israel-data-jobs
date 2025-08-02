@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Download, RefreshCw, Calendar, Building, MapPin, ExternalLink } from 'lucide-react';
+import { Download, RefreshCw, Calendar, Building, MapPin, ExternalLink, Play } from 'lucide-react';
 
 export const JobDashboard = () => {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
@@ -15,6 +15,7 @@ export const JobDashboard = () => {
   const [stats, setStats] = useState<JobStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
+  const [isCollecting, setIsCollecting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [selectedSource, setSelectedSource] = useState<string>('all');
@@ -126,6 +127,38 @@ export const JobDashboard = () => {
     }
   };
 
+  const handleJobCollection = async () => {
+    setIsCollecting(true);
+    try {
+      const result = await jobService.triggerJobCollection();
+      
+      if (result.success) {
+        toast({
+          title: "Collection Started",
+          description: result.message,
+        });
+        // Optionally refresh data after a short delay
+        setTimeout(() => {
+          handleRefresh();
+        }, 2000);
+      } else {
+        toast({
+          title: "Collection Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Collection Failed",
+        description: "Failed to start job collection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCollecting(false);
+    }
+  };
+
   const getUniqueCompanies = () => {
     return Array.from(new Set(jobs.map(job => job.company))).sort();
   };
@@ -156,6 +189,16 @@ export const JobDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleJobCollection}
+              disabled={isCollecting}
+              variant="default"
+              size="sm"
+            >
+              <Play className={`h-4 w-4 mr-2 ${isCollecting ? 'animate-pulse' : ''}`} />
+              {isCollecting ? 'Starting Collection...' : 'Start Job Collection'}
+            </Button>
+            
             <Button
               onClick={handleRefresh}
               disabled={isFetching}

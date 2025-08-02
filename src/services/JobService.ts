@@ -60,6 +60,36 @@ export class JobService {
   /**
    * Get cached jobs
    */
+  /**
+   * Trigger job collection on remote server
+   */
+  async triggerJobCollection(): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch('http://localhost:3001/collect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to trigger collection: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        message: result.message || 'Job collection started successfully',
+      };
+    } catch (error) {
+      console.error('Error triggering job collection:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to trigger job collection',
+      };
+    }
+  }
+
   getJobs(): JobPosting[] {
     return this.jobs;
   }
