@@ -45,8 +45,18 @@ class AllJobsCollector {
           const location = $job.find('.Location, .location, [class*="location"]').first().text().trim() ||
                           $job.find('td').eq(2).text().trim() || 'Israel';
           
-          const jobLink = $job.find('a').first().attr('href') || '';
-          const fullUrl = jobLink.startsWith('http') ? jobLink : `${this.baseUrl}/${jobLink}`;
+          // Extract job number from DisplayJobContent pattern
+          let fullUrl = '';
+          const jobContent = $job.html() || '';
+          const displayJobMatch = jobContent.match(/DisplayJobContent\((\d+)\)/);
+          
+          if (displayJobMatch) {
+            const jobNumber = displayJobMatch[1];
+            fullUrl = `https://www.alljobs.co.il/Search/UploadSingle.aspx?JobID=${jobNumber}`;
+          } else {
+            const jobLink = $job.find('a').first().attr('href') || '';
+            fullUrl = jobLink.startsWith('http') ? jobLink : `${this.baseUrl}/${jobLink}`;
+          }
           
           const description = $job.find('.JobDescription, .job-description, .description').first().text().trim() ||
                              $job.text().substring(0, 200).trim();
