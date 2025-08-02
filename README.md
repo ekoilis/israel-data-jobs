@@ -31,6 +31,7 @@ An automated system for collecting and displaying Data Scientist job postings in
 // Main collection service coordinating all data sources
 JobCollectionService
 ├── JSearchCollector      // JSearch API (LinkedIn, Indeed, Glassdoor, ZipRecruiter, etc.)
+├── GoogleCollector       // SerpAPI Google Jobs search integration
 ├── MetaCollector         // Meta careers integration
 └── MobileyeCollector     // Mobileye job board adapter
 ```
@@ -175,17 +176,22 @@ The server includes multiple specialized collectors:
 - **Status**: Active with real API integration
 - **Configuration**: API key configured in collector
 
-#### 2. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
+#### 2. Google Collector (`server/collectors/GoogleCollector.js`)
+- **Purpose**: Uses SerpAPI to search Google Jobs for job postings
+- **Status**: Active with real API integration
+- **Configuration**: SerpAPI key configured in collector
+
+#### 3. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
 - **Purpose**: Collects jobs from Mobileye careers website
 - **Status**: Mock data implementation
 - **Target URL**: `https://www.mobileye.com/careers`
 
-#### 2. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
+#### 4. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
 - **Purpose**: Scrapes Israeli job board JobsCoil
 - **Status**: Mock data implementation
 - **Target URL**: `https://www.jobscoil.co.il`
 
-#### 3. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
+#### 5. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
 - **Purpose**: Collects from AllJobs platform
 - **Status**: Mock data implementation
 
@@ -197,6 +203,11 @@ For production use with real data sources, you'll need to configure API keys:
 The JSearch collector aggregates jobs from major job boards including LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others. For your own API key:
 1. Get API key from [RapidAPI JSearch](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
 2. Replace the API key in `JSearchCollector.js`
+
+#### Google Jobs (via SerpAPI)
+The Google collector uses SerpAPI to search Google Jobs. For your own API key:
+1. Get API key from [SerpAPI](https://serpapi.com/)
+2. Replace the API key in `GoogleCollector.js`
 
 #### Other Collectors
 Most collectors are designed to scrape public job boards and don't require API keys. However, for rate limiting and reliability, consider:
@@ -376,8 +387,22 @@ class JSearchCollector extends JobCollector {
 }
 ```
 
+#### Google Integration
+```typescript
+class GoogleCollector extends JobCollector {
+  source = 'Google';
+  
+  async collect(): Promise<CollectionResult> {
+    // Uses SerpAPI Google Jobs search to find job postings
+    // Handles search queries and location filtering
+    // Returns structured job data from Google Jobs
+  }
+}
+```
+
 #### Company Career Pages
 - **JSearch**: Aggregates from LinkedIn, Indeed, Glassdoor, ZipRecruiter, and others
+- **Google**: Direct Google Jobs search via SerpAPI
 - **Meta**: Meta careers page scraping
 - **Mobileye**: Mobileye job board integration
 - **Others**: Extensible system for additional sources
