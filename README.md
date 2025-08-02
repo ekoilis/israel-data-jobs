@@ -182,18 +182,19 @@ The server includes multiple specialized collectors:
 - **Configuration**: SerpAPI key configured in collector
 
 #### 3. Mobileye Collector (`server/collectors/MobileyeCollector.js`)
-- **Purpose**: Collects jobs from Mobileye careers website
-- **Status**: Mock data implementation
+- **Purpose**: Scrapes Mobileye careers page for job openings
+- **Status**: Active web scraping implementation
 - **Target URL**: `https://www.mobileye.com/careers`
 
 #### 4. JobsCoil Collector (`server/collectors/JobsCoilCollector.js`)
 - **Purpose**: Scrapes Israeli job board JobsCoil
-- **Status**: Mock data implementation
+- **Status**: Active web scraping implementation
 - **Target URL**: `https://www.jobscoil.co.il`
 
 #### 5. AllJobs Collector (`server/collectors/AllJobsCollector.js`)
 - **Purpose**: Collects from AllJobs platform
-- **Status**: Mock data implementation
+- **Status**: Active web scraping implementation
+- **Target URL**: `https://www.alljobs.co.il`
 
 ### API Key Configuration
 
@@ -209,11 +210,12 @@ The Google collector uses SerpAPI to search Google Jobs. For your own API key:
 1. Get API key from [SerpAPI](https://serpapi.com/)
 2. Replace the API key in `GoogleCollector.js`
 
-#### Other Collectors
-Most collectors are designed to scrape public job boards and don't require API keys. However, for rate limiting and reliability, consider:
-- Adding user agents and delays between requests
-- Implementing proxy rotation for large-scale scraping
-- Respecting robots.txt and terms of service
+#### Web Scraping Collectors
+All collectors now use real web scraping implementations:
+- **Robust parsing**: Multiple fallback selectors for different site layouts
+- **Error handling**: Graceful fallbacks when scraping fails
+- **Rate limiting**: Built-in delays and proper headers to avoid blocking
+- **Hebrew support**: Handles Hebrew text and Israeli job sites
 
 ### Scheduler Service
 
