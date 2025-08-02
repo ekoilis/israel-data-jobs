@@ -1,8 +1,8 @@
 const axios = require('axios');
 
-class GoogleCollector {
+class SerpAPICollector {
   constructor() {
-    this.source = 'Google';
+    this.source = 'SerpAPI';
     this.baseUrl = 'https://serpapi.com/search';
     this.apiKey = '24d91bd93c1e6a1f87fe441ec8a7917e944145d905c4931e9222e5daedab50d0';
   }
@@ -24,7 +24,7 @@ class GoogleCollector {
       const jobs = response.data.jobs_results || [];
       
       const mappedJobs = jobs.map((job, index) => ({
-        id: `google-${Date.now()}-${index}`,
+        id: `serpapi-${Date.now()}-${index}`,
         title: job.title || 'Unknown Title',
         company: job.company_name || 'Unknown Company',
         location: job.location || 'Unknown Location',
@@ -132,4 +132,4 @@ class GoogleCollector {
   }
 }
 
-module.exports = GoogleCollector;
+module.exports = SerpAPICollector;

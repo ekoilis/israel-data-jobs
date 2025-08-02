@@ -1,5 +1,5 @@
 const JSearchCollector = require('../collectors/JSearchCollector');
-const GoogleCollector = require('../collectors/GoogleCollector');
+const SerpAPICollector = require('../collectors/SerpAPICollector');
 const MobileyeCollector = require('../collectors/MobileyeCollector');
 const JobsCoilCollector = require('../collectors/JobsCoilCollector');
 const AllJobsCollector = require('../collectors/AllJobsCollector');
@@ -8,7 +8,7 @@ class JobCollectionService {
   constructor() {
     this.collectors = [
       new JSearchCollector(),
-      new GoogleCollector(),
+      new SerpAPICollector(),
       new MobileyeCollector(),
       new JobsCoilCollector(),
       new AllJobsCollector()
