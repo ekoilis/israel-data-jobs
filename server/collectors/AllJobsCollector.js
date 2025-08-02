@@ -34,6 +34,7 @@ class AllJobsCollector {
       $('.JobItem, .job-item, [class*="job"], [class*="Job"]').each((index, element) => {
         try {
           const $job = $(element);
+          console.log($job);
           
           const title = $job.find('.JobTitle, .job-title, h2, h3, a[href*="job"]').first().text().trim() ||
                        $job.find('a').first().text().trim();
