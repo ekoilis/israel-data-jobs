@@ -1,5 +1,4 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 
 class GongCollector {
   constructor() {
@@ -9,23 +8,35 @@ class GongCollector {
   }
 
   async collectJobs() {
+    let browser;
     try {
       console.log(`Collecting jobs from ${this.source}...`);
       
-      const response = await axios.get(this.careersUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'DNT': '1',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
-        },
-        timeout: 15000
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu'
+        ]
       });
 
-      const $ = cheerio.load(response.data);
+      const page = await browser.newPage();
+      
+      // Set user agent and viewport
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      await page.setViewport({ width: 1280, height: 720 });
+      
+      // Navigate to careers page
+      await page.goto(this.careersUrl, { 
+        waitUntil: 'networkidle2',
+        timeout: 15000 
+      });
+
       const jobs = [];
 
       // Try different selectors for job listings
@@ -48,43 +59,72 @@ class GongCollector {
       for (const selector of selectors) {
         if (foundJobs) break;
         
-        $(selector).each((index, element) => {
+        const elements = await page.$$(selector);
+        
+        for (let index = 0; index < elements.length; index++) {
           try {
-            const $job = $(element);
-            console.log($job);
+            const element = elements[index];
             
-            const title = $job.find('.title, .job-title, .position-title, h2, h3, h4, a').first().text().trim() ||
-                         $job.text().trim().split('\n')[0];
-                         
-            const department = $job.find('.department, .team, .category, .division').first().text().trim() ||
-                              'Technology';
-                              
-            const location = $job.find('.location, .office, .city, [class*="location"]').first().text().trim() ||
-                            'Remote/Global';
-                            
-            const description = $job.find('.description, .summary, .excerpt, p').first().text().trim() ||
-                               $job.text().substring(0, 200).trim();
+            // Get element text content and attributes
+            const elementData = await page.evaluate((el) => {
+              const getTextContent = (selectors) => {
+                for (const sel of selectors) {
+                  const found = el.querySelector(sel);
+                  if (found && found.textContent.trim()) {
+                    return found.textContent.trim();
+                  }
+                }
+                return '';
+              };
 
-            // Extract job URL
-            let jobUrl = '';
-            const linkElement = $job.find('a').first();
-            if (linkElement.length) {
-              const href = linkElement.attr('href');
-              if (href) {
-                jobUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
+              const title = getTextContent(['.title', '.job-title', '.position-title', 'h2', 'h3', 'h4', 'a']) ||
+                           el.textContent.trim().split('\n')[0];
+                           
+              const department = getTextContent(['.department', '.team', '.category', '.division']) ||
+                                'Technology';
+                                
+              const location = getTextContent(['.location', '.office', '.city', '[class*="location"]']) ||
+                              'Remote/Global';
+                              
+              const description = getTextContent(['.description', '.summary', '.excerpt', 'p']) ||
+                                 el.textContent.substring(0, 200).trim();
+
+              // Extract job URL
+              let jobUrl = '';
+              const linkElement = el.querySelector('a');
+              if (linkElement) {
+                const href = linkElement.getAttribute('href');
+                if (href) {
+                  jobUrl = href;
+                }
               }
-            }
+
+              return {
+                title,
+                department,
+                location,
+                description,
+                jobUrl,
+                fullText: el.textContent
+              };
+            }, element);
+
+            const { title, department, location, description, jobUrl, fullText } = elementData;
 
             if (title && title.length > 3 && !title.toLowerCase().includes('cookie') && 
                 !title.toLowerCase().includes('privacy') && title !== description) {
               
+              // Construct full URL if relative
+              const fullJobUrl = jobUrl && jobUrl.startsWith('http') ? jobUrl : 
+                                jobUrl ? `${this.baseUrl}${jobUrl}` : this.careersUrl;
+
               jobs.push({
                 id: `gong-${Date.now()}-${index}`,
                 title: this.cleanText(title),
                 company: 'Gong',
                 location: this.cleanText(location) || 'Remote/Global',
                 description: this.cleanText(description) || 'Join Gong to revolutionize revenue intelligence',
-                url: jobUrl || this.careersUrl,
+                url: fullJobUrl,
                 source: this.source,
                 postDate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
                 collectionDate: new Date().toISOString(),
@@ -99,18 +139,24 @@ class GongCollector {
           } catch (err) {
             console.warn(`Error parsing job ${index} with selector ${selector}:`, err.message);
           }
-        });
+        }
 
         if (jobs.length > 0) break;
       }
 
       // Fallback: look for any links in the careers section
       if (jobs.length === 0) {
-        $('a').each((index, element) => {
+        const links = await page.$$('a');
+        
+        for (let index = 0; index < links.length && jobs.length < 5; index++) {
           try {
-            const $link = $(element);
-            const href = $link.attr('href');
-            const text = $link.text().trim();
+            const linkData = await page.evaluate((link) => {
+              const href = link.getAttribute('href');
+              const text = link.textContent.trim();
+              return { href, text };
+            }, links[index]);
+
+            const { href, text } = linkData;
             
             if (href && text && text.length > 10 && 
                 (href.includes('job') || href.includes('career') || href.includes('position')) &&
@@ -118,13 +164,15 @@ class GongCollector {
                 !text.toLowerCase().includes('apply now') &&
                 text.split(' ').length >= 2) {
               
+              const fullUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
+              
               jobs.push({
                 id: `gong-${Date.now()}-${index}`,
                 title: this.cleanText(text),
                 company: 'Gong',
                 location: 'Remote/Global',
                 description: 'Join Gong to revolutionize revenue intelligence and help sales teams win more deals',
-                url: href.startsWith('http') ? href : `${this.baseUrl}${href}`,
+                url: fullUrl,
                 source: this.source,
                 postDate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
                 collectionDate: new Date().toISOString(),
@@ -137,7 +185,7 @@ class GongCollector {
           } catch (err) {
             console.warn(`Error parsing fallback job ${index}:`, err.message);
           }
-        });
+        }
       }
 
       console.log(`Collected ${jobs.length} jobs from ${this.source}`);
@@ -162,6 +210,10 @@ class GongCollector {
         experienceLevel: 'Mid',
         tags: ['Software Engineering', 'AI/ML', 'SaaS']
       }];
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
     }
   }
 
